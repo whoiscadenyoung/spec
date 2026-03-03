@@ -18,6 +18,8 @@ The original spec-kit scripts (`create-new-feature.sh`, `setup-plan.sh`, `check-
 
 ## Usage
 
+All commands output JSON to stdout. Errors are written as JSON to stderr and exit with code 1.
+
 In development:
 
 ```sh
@@ -34,7 +36,7 @@ From another repository (no install required):
 bunx spec init --ai copilot
 bunx spec spec create -d "add user authentication"
 bunx spec plan create
-bunx spec check-requirements --json
+bunx spec check-requirements
 bunx spec update-context --agent claude
 ```
 

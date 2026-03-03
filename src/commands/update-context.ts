@@ -91,19 +91,19 @@ const updateContext = defineCommand({
       { description: `Agent to update (${AGENTS.map(a => a.name).join(', ')}). Omit to update all detected.`, short: 'a' }
     ),
   },
-  handler: async ({ flags, colors }) => {
+  handler: async ({ flags }) => {
     const repoRoot = await getRepoRoot()
     const branch = await getCurrentBranch()
 
     if (!isFeatureBranch(branch)) {
-      console.error(colors.red(`Not on a feature branch (expected NNN-description format): ${branch}`))
+      console.error(JSON.stringify({ error: `Not on a feature branch (expected NNN-description format): ${branch}` }))
       process.exit(1)
     }
 
     const paths = getFeaturePaths(repoRoot, branch)
 
     if (!existsSync(paths.planMd)) {
-      console.error(colors.red(`plan.md not found — run: spec plan create`))
+      console.error(JSON.stringify({ error: `plan.md not found — run: spec plan create` }))
       process.exit(1)
     }
 
@@ -116,7 +116,7 @@ const updateContext = defineCommand({
     if (flags.agent) {
       const target = AGENTS.find(a => a.name === flags.agent)
       if (!target) {
-        console.error(colors.red(`Unknown agent: ${flags.agent}. Available: ${AGENTS.map(a => a.name).join(', ')}`))
+        console.error(JSON.stringify({ error: `Unknown agent: ${flags.agent}. Available: ${AGENTS.map(a => a.name).join(', ')}` }))
         process.exit(1)
       }
       targets = [target]
@@ -124,16 +124,19 @@ const updateContext = defineCommand({
       // Update all agents whose files already exist in the repo
       targets = AGENTS.filter(a => existsSync(join(repoRoot, a.filePath)))
       if (targets.length === 0) {
-        console.log(colors.yellow('No agent files found. Use --agent <name> to create one.'))
+        console.log(JSON.stringify({ updated: [], message: 'No agent files found. Use --agent <name> to create one.' }))
         return
       }
     }
 
+    const updated: string[] = []
     for (const agent of targets) {
       const agentPath = join(repoRoot, agent.filePath)
       await updateAgentFile(agentPath, contextBlock)
-      console.log(colors.green(`✓ Updated ${agent.name}: ${agent.filePath}`))
+      updated.push(agent.filePath)
     }
+
+    console.log(JSON.stringify({ updated }))
   },
 })
 

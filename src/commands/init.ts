@@ -40,7 +40,7 @@ const initCommand = defineCommand({
       { description: 'Overwrite existing prompt files', short: 'f' }
     ),
   },
-  handler: async ({ flags, colors }) => {
+  handler: async ({ flags }) => {
     const repoRoot = await getRepoRoot()
     const templateRoot = join(import.meta.dir, '..', '..', 'templates')
 
@@ -51,28 +51,19 @@ const initCommand = defineCommand({
     await mkdir(promptsDstDir, { recursive: true })
 
     const promptFiles = await readdir(promptsSrcDir)
-    let copied = 0
-    let skipped = 0
+    const copied: string[] = []
+    const skipped: string[] = []
 
     for (const file of promptFiles) {
       const src = join(promptsSrcDir, file)
       const dst = join(promptsDstDir, file)
 
       if (existsSync(dst) && !flags.force) {
-        console.log(colors.dim(`  skipped ${file} (already exists, use --force to overwrite)`))
-        skipped++
+        skipped.push(file)
       } else {
         await copyFile(src, dst)
-        console.log(colors.green(`  ✓ ${file}`))
-        copied++
+        copied.push(file)
       }
-    }
-
-    if (copied > 0) {
-      console.log(colors.green(`\n✓ Copied ${copied} prompt file${copied === 1 ? '' : 's'} → .github/prompts/`))
-    }
-    if (skipped > 0) {
-      console.log(colors.dim(`  (${skipped} file${skipped === 1 ? '' : 's'} skipped)`))
     }
 
     // Step 2: Merge .vscode/settings.json
@@ -88,17 +79,12 @@ const initCommand = defineCommand({
     const merged = deepMerge(existing, incoming)
     await mkdir(dirname(vscodeDst), { recursive: true })
     await Bun.write(vscodeDst, JSON.stringify(merged, null, 2) + '\n')
-    console.log(colors.green('✓ Updated .vscode/settings.json'))
 
-    // Step 3: Print next steps
-    console.log(`
-Use /speckit.* commands in VS Code Copilot chat:
-  /speckit.specify       define a new feature
-  /speckit.plan          create implementation plan
-  /speckit.tasks         break down into tasks
-  /speckit.implement     execute a task
-  /speckit.constitution  set up project constitution
-`)
+    console.log(JSON.stringify({
+      promptsCopied: copied,
+      promptsSkipped: skipped,
+      vscodeSettingsUpdated: vscodeDst,
+    }))
   },
 })
 

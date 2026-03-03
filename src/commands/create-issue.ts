@@ -1,9 +1,6 @@
 import { defineCommand, option } from '@bunli/core'
 import { z } from 'zod'
 import { spawn } from 'node:child_process'
-import { promisify } from 'node:util'
-
-const execFile = promisify(require('node:child_process').execFile)
 
 function runGhCommand(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -41,28 +38,19 @@ const createIssueCommand = defineCommand({
       z.string(),
       { description: 'Issue body', short: 'b' }
     ),
-    json: option(
-      z.boolean().default(false),
-      { description: 'Output as JSON', short: 'j' }
-    ),
   },
-  handler: async ({ flags, colors }) => {
+  handler: async ({ flags }) => {
     try {
       const args = ['issue', 'create', '--title', flags.title, '--body', flags.body]
       const issueUrl = await runGhCommand(args)
-      
+
       // Extract issue number from URL (e.g., https://github.com/owner/repo/issues/123 -> 123)
       const issueMatch = issueUrl.match(/\/issues\/(\d+)/)
       const issueNumber = issueMatch ? parseInt(issueMatch[1], 10) : null
-      
-      if (flags.json) {
-        console.log(JSON.stringify({ issueNumber, issueUrl }, null, 2))
-      } else {
-        console.log(colors.green(`issueNumber: ${issueNumber}`))
-        console.log(colors.green(`issueUrl: ${issueUrl}`))
-      }
+
+      console.log(JSON.stringify({ issueNumber, issueUrl }))
     } catch (error) {
-      console.error(colors.red(`✗ Failed to create issue: ${error instanceof Error ? error.message : String(error)}`))
+      console.error(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }))
       process.exit(1)
     }
   },

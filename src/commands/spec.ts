@@ -44,11 +44,10 @@ const createCommand = defineCommand({
   description: 'Create a new feature branch with spec directory',
   options: {
     description: option(z.string(), { description: 'Feature description', short: 'd' }),
-    json: option(z.boolean().default(false), { description: 'Output as JSON', short: 'j' }),
     shortName: option(z.string().optional(), { description: 'Override generated branch name suffix' }),
     number: option(z.coerce.number().int().positive().optional(), { description: 'Override feature number' }),
   },
-  handler: async ({ flags, colors }) => {
+  handler: async ({ flags }) => {
     const repoRoot = await getRepoRoot()
     const featureNumber = flags.number ?? await getNextFeatureNumber(repoRoot)
     const suffix = flags.shortName
@@ -59,7 +58,7 @@ const createCommand = defineCommand({
     const branchName = `${prefix}-${suffix}`
 
     if (!isFeatureBranch(branchName)) {
-      console.error(colors.red(`Invalid branch name generated: ${branchName}`))
+      console.error(JSON.stringify({ error: `Invalid branch name generated: ${branchName}` }))
       process.exit(1)
     }
 
@@ -77,12 +76,7 @@ const createCommand = defineCommand({
 
     await Bun.write(paths.specMd, content)
 
-    if (flags.json) {
-      console.log(JSON.stringify({ branch: branchName, specFile: paths.specMd, featureNumber }))
-    } else {
-      console.log(colors.green(`✓ Created branch: ${branchName}`))
-      console.log(colors.green(`✓ Created spec: ${paths.specMd}`))
-    }
+    console.log(JSON.stringify({ branch: branchName, specFile: paths.specMd, featureNumber }))
   },
 })
 

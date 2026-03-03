@@ -9,39 +9,29 @@ const checkRequirements = defineCommand({
   name: 'check-requirements',
   description: 'Validate feature documentation prerequisites',
   options: {
-    json: option(z.boolean().default(false), { description: 'Output as JSON', short: 'j' }),
     requireTasks: option(z.boolean().default(false), { description: 'Require tasks.md to exist' }),
     pathsOnly: option(z.boolean().default(false), { description: 'Print path variables without validation' }),
   },
-  handler: async ({ flags, colors }) => {
+  handler: async ({ flags }) => {
     const repoRoot = await getRepoRoot()
     const branch = await getCurrentBranch()
 
     if (!isFeatureBranch(branch)) {
-      console.error(colors.red(`Not on a feature branch (expected NNN-description format): ${branch}`))
+      console.error(JSON.stringify({ error: `Not on a feature branch (expected NNN-description format): ${branch}` }))
       process.exit(1)
     }
 
     const paths = getFeaturePaths(repoRoot, branch)
 
     if (flags.pathsOnly) {
-      if (flags.json) {
-        console.log(JSON.stringify({
-          REPO_ROOT: paths.repoRoot,
-          BRANCH: paths.branch,
-          FEATURE_DIR: paths.featureDir,
-          FEATURE_SPEC: paths.specMd,
-          IMPL_PLAN: paths.planMd,
-          TASKS: paths.tasksMd,
-        }))
-      } else {
-        console.log(`REPO_ROOT=${paths.repoRoot}`)
-        console.log(`BRANCH=${paths.branch}`)
-        console.log(`FEATURE_DIR=${paths.featureDir}`)
-        console.log(`FEATURE_SPEC=${paths.specMd}`)
-        console.log(`IMPL_PLAN=${paths.planMd}`)
-        console.log(`TASKS=${paths.tasksMd}`)
-      }
+      console.log(JSON.stringify({
+        REPO_ROOT: paths.repoRoot,
+        BRANCH: paths.branch,
+        FEATURE_DIR: paths.featureDir,
+        FEATURE_SPEC: paths.specMd,
+        IMPL_PLAN: paths.planMd,
+        TASKS: paths.tasksMd,
+      }))
       return
     }
 
@@ -61,11 +51,7 @@ const checkRequirements = defineCommand({
     }
 
     if (errors.length > 0) {
-      if (flags.json) {
-        console.log(JSON.stringify({ ok: false, errors }))
-      } else {
-        for (const e of errors) console.error(colors.red(`✗ ${e}`))
-      }
+      console.error(JSON.stringify({ ok: false, errors }))
       process.exit(1)
     }
 
@@ -85,18 +71,7 @@ const checkRequirements = defineCommand({
       if (existsSync(doc.path)) availableDocs.push(doc.name)
     }
 
-    if (flags.json) {
-      console.log(JSON.stringify({ ok: true, featureDir: paths.featureDir, availableDocs }))
-    } else {
-      console.log(`Feature: ${paths.branch}`)
-      console.log(`Directory: ${paths.featureDir}`)
-      console.log()
-      for (const doc of docChecks) {
-        const exists = existsSync(doc.path)
-        const icon = exists ? colors.green('✓') : '○'
-        console.log(`  ${icon} ${doc.name}`)
-      }
-    }
+    console.log(JSON.stringify({ ok: true, featureDir: paths.featureDir, availableDocs }))
   },
 })
 

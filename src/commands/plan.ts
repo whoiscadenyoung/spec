@@ -8,15 +8,13 @@ import { getFeaturePaths, findFeatureDirByPrefix, resolveTemplate } from '../lib
 const createCommand = defineCommand({
   name: 'create',
   description: 'Create a plan.md for the current feature branch',
-  options: {
-    json: option(z.boolean().default(false), { description: 'Output as JSON', short: 'j' }),
-  },
-  handler: async ({ flags, colors }) => {
+  options: {},
+  handler: async ({ }) => {
     const repoRoot = await getRepoRoot()
     const branch = await getCurrentBranch()
 
     if (!isFeatureBranch(branch)) {
-      console.error(colors.red(`Not on a feature branch (expected NNN-description format): ${branch}`))
+      console.error(JSON.stringify({ error: `Not on a feature branch (expected NNN-description format): ${branch}` }))
       process.exit(1)
     }
 
@@ -37,7 +35,7 @@ const createCommand = defineCommand({
     const planMd = `${featureDir}/plan.md`
 
     if (existsSync(planMd)) {
-      console.error(colors.red(`plan.md already exists: ${planMd}`))
+      console.error(JSON.stringify({ error: `plan.md already exists: ${planMd}` }))
       process.exit(1)
     }
 
@@ -49,11 +47,7 @@ const createCommand = defineCommand({
 
     await Bun.write(planMd, content)
 
-    if (flags.json) {
-      console.log(JSON.stringify({ branch, planFile: planMd, featureDir }))
-    } else {
-      console.log(colors.green(`✓ Created plan: ${planMd}`))
-    }
+    console.log(JSON.stringify({ branch, planFile: planMd, featureDir }))
   },
 })
 

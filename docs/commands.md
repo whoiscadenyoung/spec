@@ -1,5 +1,7 @@
 # Commands
 
+All commands output JSON to stdout. Errors are written as JSON to stderr and exit with code 1.
+
 ## `init`
 
 Bootstrap a repository with GitHub Copilot prompt files and VS Code settings for Spec-Driven Development.
@@ -54,6 +56,15 @@ Existing keys in `.vscode/settings.json` are never overwritten — the merge onl
 
 Existing prompt files are skipped unless `--force` is passed.
 
+**Output**:
+```json
+{
+  "promptsCopied": ["speckit.specify.prompt.md", "..."],
+  "promptsSkipped": [],
+  "vscodeSettingsUpdated": "/path/to/repo/.vscode/settings.json"
+}
+```
+
 ---
 
 ## `spec create`
@@ -69,7 +80,6 @@ spec spec create [options]
 | `--description` | `-d` | string | Feature description (used to generate branch name) |
 | `--short-name` | | string | Override the generated branch name suffix |
 | `--number` | | integer | Override the auto-assigned feature number |
-| `--json` | `-j` | boolean | Output result as JSON |
 
 **Branch naming**: The description is lowercased, stop words are removed, and the remaining words are joined with hyphens. The branch name is prefixed with the zero-padded feature number: `001-user-authentication`. Names longer than 244 bytes are truncated at the nearest word boundary.
 
@@ -77,13 +87,7 @@ spec spec create [options]
 
 **Auto-numbering**: Scans both existing git branches (local + remote) and `specs/` directories to find the next unused number.
 
-**Output (text)**:
-```
-✓ Created branch: 001-user-authentication
-✓ Created spec: /path/to/repo/specs/001-user-authentication/spec.md
-```
-
-**Output (JSON)**:
+**Output**:
 ```json
 { "branch": "001-user-authentication", "specFile": "/path/to/repo/specs/001-user-authentication/spec.md", "featureNumber": 1 }
 ```
@@ -97,21 +101,12 @@ spec spec create [options]
 Create a `plan.md` implementation plan for the current feature branch.
 
 ```sh
-spec plan create [options]
+spec plan create
 ```
 
-| Option | Short | Type | Description |
-|--------|-------|------|-------------|
-| `--json` | `-j` | boolean | Output result as JSON |
+No options. Must be run from a feature branch (`NNN-description` format). Errors if `plan.md` already exists. Creates the feature directory if it doesn't exist yet.
 
-Must be run from a feature branch (`NNN-description` format). Errors if `plan.md` already exists. Creates the feature directory if it doesn't exist yet.
-
-**Output (text)**:
-```
-✓ Created plan: /path/to/repo/specs/001-user-authentication/plan.md
-```
-
-**Output (JSON)**:
+**Output**:
 ```json
 { "branch": "001-user-authentication", "planFile": "...", "featureDir": "..." }
 ```
@@ -130,9 +125,8 @@ spec check-requirements [options]
 
 | Option | Short | Type | Description |
 |--------|-------|------|-------------|
-| `--json` | `-j` | boolean | Output result as JSON |
 | `--require-tasks` | | boolean | Also require `tasks.md` to exist |
-| `--paths-only` | | boolean | Print path variables only, skip validation |
+| `--paths-only` | | boolean | Output path variables only, skip validation |
 
 Exits with code 1 if required files are missing.
 
@@ -140,26 +134,12 @@ Exits with code 1 if required files are missing.
 
 **Catalogued files** (optional, reported): `spec.md`, `research.md`, `data-model.md`, `quickstart.md`, `tasks.md`, `contracts/`
 
-**Output (text)**:
-```
-Feature: 001-user-authentication
-Directory: /path/to/repo/specs/001-user-authentication
-
-  ✓ spec.md
-  ✓ plan.md
-  ○ research.md
-  ○ data-model.md
-  ○ quickstart.md
-  ○ tasks.md
-  ○ contracts/
-```
-
-**Output (JSON)**:
+**Output**:
 ```json
 { "ok": true, "featureDir": "...", "availableDocs": ["spec.md", "plan.md"] }
 ```
 
-**Output (`--paths-only` JSON)**:
+**Output (`--paths-only`)**:
 ```json
 {
   "REPO_ROOT": "...",
@@ -221,3 +201,30 @@ Requires the current branch to be a feature branch and `plan.md` to exist.
 If the file already contains a `<!-- spec-context:start/end -->` block it is replaced in place. Otherwise the block is appended to the end of the file.
 
 The tech context values are parsed from the `## Technical Context` section of `plan.md` by matching `**Label**: value` patterns.
+
+**Output**:
+```json
+{ "updated": ["CLAUDE.md", ".github/copilot-instructions.md"] }
+```
+
+---
+
+## `create-issue`
+
+Create a GitHub issue using the `gh` CLI.
+
+```sh
+spec create-issue [options]
+```
+
+| Option | Short | Type | Description |
+|--------|-------|------|-------------|
+| `--title` | `-t` | string | Issue title (required) |
+| `--body` | `-b` | string | Issue body (required) |
+
+Requires the `gh` CLI to be installed and authenticated.
+
+**Output**:
+```json
+{ "issueNumber": 42, "issueUrl": "https://github.com/owner/repo/issues/42" }
+```

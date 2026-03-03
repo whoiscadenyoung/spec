@@ -26,6 +26,12 @@ This is simpler and more reliable than fetching from the SpecKit GitHub releases
 
 This prevents `init` from destroying workspace settings the developer has already configured. The alternative (wholesale replacement) was the source of a known issue in the original SpecKit Python tool.
 
+## JSON-only output
+
+All commands output JSON to stdout unconditionally. There is no `--json` flag and no human-readable text mode. This treats the CLI as a programmatic API: callers (shell scripts, AI agents, CI steps) parse the output directly, and the output format is stable and machine-readable by default.
+
+Errors are written as `{ "error": "message" }` to stderr so they can be distinguished from successful output without inspecting the exit code.
+
 ## `--ai` flag required on `init`, extensible enum
 
 `init` requires `--ai` with a value from an explicit enum (`z.enum(['copilot'])`). This makes the agent selection intentional and keeps the door open for additional agents later — adding `claude` would mean adding a `templates/claude/` directory and extending the enum.
