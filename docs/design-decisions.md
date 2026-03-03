@@ -12,7 +12,29 @@ Rationale: git's CLI is stable, well-understood, and handles edge cases (detache
 
 ## Bundled templates with repo override
 
-Templates ship with the package so the CLI works out of the box. If a calling repo has `.specify/templates/<name>`, that takes precedence. This lets projects customize their spec/plan structure without forking the CLI.
+Spec and plan templates ship with the package so the CLI works out of the box. If a calling repo has `.specify/templates/<name>`, that takes precedence. This lets projects customize their spec/plan structure without forking the CLI.
+
+## Bundled agent prompt files (no download at runtime)
+
+Copilot prompt files (`speckit.*.prompt.md`) ship with the package under `templates/.github/prompts/`. The `init` command copies them from the package into the calling repo. There is no network request at runtime.
+
+This is simpler and more reliable than fetching from the SpecKit GitHub releases at runtime, and the files live in source control where they can be reviewed, diffed, and customized for future VS Code compatibility work.
+
+## Deep merge for `.vscode/settings.json`
+
+`init` merges new settings into any existing `.vscode/settings.json` rather than replacing it. The merge is additive: keys present in the existing file are never overwritten, only absent keys are added. Nested objects are merged recursively using the same rule.
+
+This prevents `init` from destroying workspace settings the developer has already configured. The alternative (wholesale replacement) was the source of a known issue in the original SpecKit Python tool.
+
+## `--ai` flag required on `init`, extensible enum
+
+`init` requires `--ai` with a value from an explicit enum (`z.enum(['copilot'])`). This makes the agent selection intentional and keeps the door open for additional agents later — adding `claude` would mean adding a `templates/claude/` directory and extending the enum.
+
+Auto-detection was considered but skipped: it adds complexity and can silently configure the wrong agent in ambiguous environments (e.g., a machine with multiple AI tools installed).
+
+## Existing files skipped by default in `init`
+
+If a prompt file already exists in the calling repo, `init` skips it rather than overwriting it. Developers are expected to customize these files for their project, and silent overwriting would destroy those customizations on re-run. `--force` is available for explicit overwrite.
 
 ## Subcommands via `defineGroup`
 
@@ -22,7 +44,7 @@ Templates ship with the package so the CLI works out of the box. If a calling re
 
 Agent files often contain manually maintained content. Rather than overwriting the whole file, `update-context` writes a delimited block that can be idempotently replaced on subsequent runs. This lets developers keep their own content in CLAUDE.md or .windsurfrules alongside the generated context.
 
-## Auto-detect vs explicit `--agent`
+## Auto-detect vs explicit `--agent` in `update-context`
 
 Without `--agent`, `update-context` only touches agent files that already exist in the repo. This avoids creating files for agents the developer doesn't use. With `--agent`, it creates the file if needed — useful for bootstrapping a new agent setup.
 

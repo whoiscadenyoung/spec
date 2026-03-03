@@ -30,6 +30,18 @@ Pure path utilities. No shell calls. Uses `Bun.file()` for existence checks and 
 | `findFeatureDirByPrefix(specsDir, prefix)` | Scans `specs/` for a directory starting with `NNN-`, allowing a branch rename without breaking the spec dir reference |
 | `resolveTemplate(name, repoRoot)` | Checks `<repoRoot>/.specify/templates/<name>` first, then the bundled `templates/` directory |
 
+### `src/commands/init.ts` — `init`
+
+Bootstraps a repository for Spec-Driven Development:
+
+1. Reads all files from the bundled `templates/.github/prompts/` directory
+2. Copies them to `<repoRoot>/.github/prompts/`, skipping any that already exist (unless `--force`)
+3. Reads the bundled `templates/.vscode/settings.json`
+4. Deep-merges those settings into `<repoRoot>/.vscode/settings.json`, preserving any existing keys
+5. Creates directories as needed
+
+The bundled template root is resolved via `import.meta.dir` (same pattern as `resolveTemplate`).
+
 ### `src/commands/spec.ts` — `spec create`
 
 Handles feature branch bootstrapping:
@@ -78,10 +90,10 @@ User invokes command
   getRepoRoot()          ← walks up from process.cwd()
         │
         ▼
-  getCurrentBranch()     ← git / env var / specs/ scan
+  getCurrentBranch()     ← git / env var / specs/ scan  (not needed by init)
         │
         ▼
-  getFeaturePaths()      ← pure path computation
+  getFeaturePaths()      ← pure path computation        (not needed by init)
         │
         ├── read files   ← Bun.file().text()
         ├── write files  ← Bun.write()
@@ -90,19 +102,24 @@ User invokes command
 
 ## Calling Repo Convention
 
-All commands operate on the repository from which they are invoked. The pattern is:
+All commands operate on the repository from which they are invoked. After `init`, the typical structure is:
 
 ```
 <calling-repo>/
 ├── .git/
+├── .github/
+│   ├── prompts/                    ← written by init
+│   │   ├── speckit.specify.prompt.md
+│   │   └── ...
+│   └── copilot-instructions.md    ← written by update-context
+├── .vscode/
+│   └── settings.json              ← merged by init
 ├── specs/
 │   └── 001-my-feature/
 │       ├── spec.md
 │       ├── plan.md
 │       └── tasks.md
-├── CLAUDE.md              ← written by update-context
-└── .github/
-    └── copilot-instructions.md  ← written by update-context
+└── CLAUDE.md                      ← written by update-context
 ```
 
 The CLI package itself is never modified by any command.

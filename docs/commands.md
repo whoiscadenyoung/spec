@@ -1,5 +1,61 @@
 # Commands
 
+## `init`
+
+Bootstrap a repository with GitHub Copilot prompt files and VS Code settings for Spec-Driven Development.
+
+```sh
+spec init --ai <agent> [options]
+```
+
+| Option | Short | Type | Description |
+|--------|-------|------|-------------|
+| `--ai` | `-a` | `copilot` | AI agent to configure (required) |
+| `--force` | `-f` | boolean | Overwrite existing prompt files |
+
+**What it does**:
+
+1. Copies 9 bundled prompt files into `.github/prompts/` in the calling repo
+2. Deep-merges VS Code settings into `.vscode/settings.json`
+
+**Prompt files installed** (into `.github/prompts/`):
+
+| File | Purpose |
+|------|---------|
+| `speckit.specify.prompt.md` | Create or update a feature specification |
+| `speckit.clarify.prompt.md` | Resolve ambiguities in a spec |
+| `speckit.plan.prompt.md` | Generate an implementation plan |
+| `speckit.tasks.prompt.md` | Break a plan into ordered tasks |
+| `speckit.implement.prompt.md` | Execute tasks phase by phase |
+| `speckit.constitution.prompt.md` | Create or update the project constitution |
+| `speckit.analyze.prompt.md` | Cross-artifact consistency analysis |
+| `speckit.checklist.prompt.md` | Requirements quality checklist |
+| `speckit.taskstoissues.prompt.md` | Convert tasks to GitHub issues |
+
+**VS Code settings merged** into `.vscode/settings.json`:
+
+```json
+{
+  "chat.promptFilesRecommendations": {
+    "speckit.constitution": true,
+    "speckit.specify": true,
+    "speckit.clarify": true,
+    "speckit.plan": true,
+    "speckit.tasks": true,
+    "speckit.implement": true,
+    "speckit.analyze": true,
+    "speckit.checklist": true,
+    "speckit.taskstoissues": true
+  }
+}
+```
+
+Existing keys in `.vscode/settings.json` are never overwritten — the merge only adds keys that are absent.
+
+Existing prompt files are skipped unless `--force` is passed.
+
+---
+
 ## `spec create`
 
 Create a new numbered feature branch and initialize a `spec.md` document.
