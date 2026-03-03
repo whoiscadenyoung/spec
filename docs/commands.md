@@ -107,7 +107,7 @@ spec create issue --type <type> --title <title> --body <body>
 
 ## `create spec`
 
-Create a feature branch, generate a `spec.md` from the project template, commit it, and push the branch. Run `create issue` first to obtain the issue number.
+Create a feature branch, generate a `spec.md` from the project template, commit it, push the branch, and link the branch to its GitHub issue. Run `create issue` first to obtain the issue number.
 
 ```sh
 spec create spec --type <type> --number <number> --slug <slug>
@@ -134,6 +134,8 @@ spec create spec --type <type> --number <number> --slug <slug>
 5. Stages the new spec file with `git add`
 6. Commits with message: `Create spec for issue #{number}: {slug}`
 7. Pushes the branch to the remote with `git push -u origin {branchName}`
+8. Links the branch to its GitHub issue via `gh issue develop`
+9. Posts a comment on the issue listing each created file as a permalink to that exact commit, so the links remain stable even if the files change in future commits
 
 **Output**:
 ```json
@@ -154,6 +156,8 @@ spec create spec --type <type> --number <number> --slug <slug>
 | `git_staging` | `git add` failed |
 | `git_commit` | `git commit` failed |
 | `git_push` | `git push` failed |
+| `issue_link` | `gh issue develop` failed to link the branch to the issue |
+| `issue_comment` | `gh issue comment` failed to post the file summary comment |
 
 ```json
 { "error": "remote: Repository not found.", "scope": "git_push" }

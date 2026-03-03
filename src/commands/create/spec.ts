@@ -2,7 +2,17 @@ import { defineCommand, option } from '@bunli/core'
 import { z } from 'zod'
 import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import { getRepoRoot, createBranch, stageFile, commitWithMessage, pushBranch } from '../../lib/git.js'
+import {
+  getRepoRoot,
+  createBranch,
+  stageFile,
+  commitWithMessage,
+  pushBranch,
+  linkBranchToIssue,
+  getCommitSha,
+  getRepoUrl,
+  commentOnIssue,
+} from '../../lib/git.js'
 import { resolveTemplate } from '../../lib/paths.js'
 
 // GitHub enforces a 255-byte limit on branch (ref) names.
@@ -19,8 +29,8 @@ function exitWithError(error: string, scope: string): never {
 const createSpecCommand = defineCommand({
   name: 'spec',
   description:
-    'Create a feature branch, generate a spec.md from the project template, commit it, and push the branch. ' +
-    'Run `create issue` first to obtain the issue number.',
+    'Create a feature branch, generate a spec.md from the project template, commit it, push the branch, ' +
+    'and link the branch to its GitHub issue. Run `create issue` first to obtain the issue number.',
   options: {
     type: option(z.enum(['fix', 'feature']), {
       description:
@@ -107,8 +117,10 @@ const createSpecCommand = defineCommand({
     }
 
     // --- Commit ---
+    let commitSha: string
     try {
       await commitWithMessage(`Create spec for issue #${flags.number}: ${flags.slug}`)
+      commitSha = await getCommitSha()
     } catch (error) {
       exitWithError(
         error instanceof Error ? error.message : String(error),
@@ -123,6 +135,40 @@ const createSpecCommand = defineCommand({
       exitWithError(
         error instanceof Error ? error.message : String(error),
         'git_push'
+      )
+    }
+
+    // --- Link branch to GitHub issue ---
+    try {
+      await linkBranchToIssue(flags.number, branchName)
+    } catch (error) {
+      exitWithError(
+        error instanceof Error ? error.message : String(error),
+        'issue_link'
+      )
+    }
+
+    // --- Post comment with permalink(s) to created files ---
+    try {
+      const repoUrl = await getRepoUrl()
+
+      // Build a permalink for each created file using the exact commit SHA so
+      // the link remains stable even if the files change in future commits.
+      const createdFiles = [specFile]
+      const fileLinks = createdFiles
+        .map((absPath) => {
+          const relPath = absPath.slice(repoRoot.length + 1)
+          const url = `${repoUrl}/blob/${commitSha}/${relPath}`
+          return `- [\`${relPath}\`](${url})`
+        })
+        .join('\n')
+
+      const comment = `Initial feature specification files created.\n\n${fileLinks}`
+      await commentOnIssue(flags.number, comment)
+    } catch (error) {
+      exitWithError(
+        error instanceof Error ? error.message : String(error),
+        'issue_comment'
       )
     }
 

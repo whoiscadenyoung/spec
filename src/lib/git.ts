@@ -74,6 +74,24 @@ export async function pushBranch(branchName: string): Promise<void> {
   await Bun.$`git push -u origin ${branchName}`
 }
 
+export async function linkBranchToIssue(issueNumber: number, branchName: string): Promise<void> {
+  await Bun.$`gh issue develop ${issueNumber} --name ${branchName}`
+}
+
+export async function getCommitSha(): Promise<string> {
+  const result = await Bun.$`git rev-parse HEAD`.quiet()
+  return result.stdout.toString().trim()
+}
+
+export async function getRepoUrl(): Promise<string> {
+  const result = await Bun.$`gh repo view --json url -q .url`.quiet()
+  return result.stdout.toString().trim()
+}
+
+export async function commentOnIssue(issueNumber: number, body: string): Promise<void> {
+  await Bun.$`gh issue comment ${issueNumber} --body ${body}`
+}
+
 export async function getExistingBranches(): Promise<string[]> {
   const branches: string[] = []
   try {
