@@ -4,7 +4,12 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:github.com)",
       "Bash(bun run typecheck:*)",
-      "Bash(bun dev:*)"
+      "Bash(bun dev:*)",
+      "WebFetch(domain:github.blog)",
+      "Bash(curl:*)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(echo:*)",
+      "Bash(bun run:*)"
     ]
   }
 }

@@ -4,6 +4,7 @@ import specGroup from './commands/spec.js'
 import planGroup from './commands/plan.js'
 import updateContext from './commands/update-context.js'
 import checkRequirements from './commands/check-requirements.js'
+import initCommand from './commands/init.js'
 
 const cli = await createCLI({
   name: 'spec',
@@ -11,6 +12,7 @@ const cli = await createCLI({
   description: 'Spec-Driven Development CLI',
 })
 
+cli.command(initCommand)
 cli.command(specGroup)
 cli.command(planGroup)
 cli.command(updateContext)
