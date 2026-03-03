@@ -17,6 +17,9 @@ All git operations. Uses `Bun.$` shell calls exclusively — git's CLI is stable
 | `hasGit()` | Returns `true` if `git --version` succeeds |
 | `isFeatureBranch(branch)` | Returns `true` if branch matches `NNN-description` (3 digits + hyphen) |
 | `createBranch(name)` | Runs `git checkout -b <name>` |
+| `stageFile(filePath)` | Runs `git add <filePath>` |
+| `commitWithMessage(message)` | Runs `git commit -m <message>` |
+| `pushBranch(branchName)` | Runs `git push -u origin <branchName>` |
 | `getExistingBranches()` | Collects local + remote branches, strips `origin/` prefix |
 | `getNextFeatureNumber(repoRoot)` | Scans existing branches and `specs/` dirs for taken numbers, returns the next available integer |
 
@@ -42,15 +45,34 @@ Bootstraps a repository for Spec-Driven Development:
 
 The bundled template root is resolved via `import.meta.dir` (same pattern as `resolveTemplate`).
 
-### `src/commands/spec.ts` — `spec create`
+### `src/commands/create.ts` — `create` group
 
-Handles feature branch bootstrapping:
+Registers the `create issue` and `create spec` subcommands under the `create` top-level command.
 
-1. Resolves next feature number (checking git branches + specs dirs)
-2. Generates a branch name from the description by lowercasing, stripping stop words, and joining with hyphens
-3. Enforces GitHub's 244-byte branch name limit, truncating at word boundaries
-4. Runs `git checkout -b` to create the branch
-5. Creates `specs/<branch>/` and writes `spec.md` from template
+### `src/commands/create/issue.ts` — `create issue`
+
+Creates a GitHub issue via the `gh` CLI:
+
+1. Validates `--title` length against GitHub's 256-character limit
+2. Runs `gh issue create --title <title> --body <body>`
+3. Extracts the issue number from the returned URL
+4. Returns `{ issueNumber, issueUrl }` on success, or `{ error, scope }` on failure
+
+Error scope values: `validation`, `issue_creation`.
+
+### `src/commands/create/spec.ts` — `create spec`
+
+Handles feature branch bootstrapping for a GitHub-issue-backed workflow:
+
+1. Validates `--slug` format and total branch name byte length against GitHub's 255-byte limit
+2. Creates and checks out branch `{type}/{number}-{slug}` (e.g., `feature/123-user-auth`)
+3. Creates `specs/{number}-{slug}/` and writes `spec.md` from template
+4. Stages the spec file with `git add`
+5. Commits with message `Create spec for issue #{number}: {slug}`
+6. Pushes the branch with `git push -u origin {branchName}`
+7. Returns `{ branchName, specFile, featureDir }` on success, or `{ error, scope }` on failure
+
+Error scope values: `validation`, `branch_creation`, `template_creation`, `git_staging`, `git_commit`, `git_push`.
 
 ### `src/commands/plan.ts` — `plan create`
 
@@ -90,10 +112,10 @@ User invokes command
   getRepoRoot()          ← walks up from process.cwd()
         │
         ▼
-  getCurrentBranch()     ← git / env var / specs/ scan  (not needed by init)
+  getCurrentBranch()     ← git / env var / specs/ scan  (not needed by init or create)
         │
         ▼
-  getFeaturePaths()      ← pure path computation        (not needed by init)
+  getFeaturePaths()      ← pure path computation        (not needed by init or create)
         │
         ├── read files   ← Bun.file().text()
         ├── write files  ← Bun.write()
@@ -115,7 +137,7 @@ All commands operate on the repository from which they are invoked. After `init`
 ├── .vscode/
 │   └── settings.json              ← merged by init
 ├── specs/
-│   └── 001-my-feature/
+│   └── 123-user-auth/             ← created by create spec
 │       ├── spec.md
 │       ├── plan.md
 │       └── tasks.md

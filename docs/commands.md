@@ -2,6 +2,8 @@
 
 All commands output JSON to stdout. Errors are written as JSON to stderr and exit with code 1.
 
+---
+
 ## `init`
 
 Bootstrap a repository with GitHub Copilot prompt files and VS Code settings for Spec-Driven Development.
@@ -67,32 +69,97 @@ Existing prompt files are skipped unless `--force` is passed.
 
 ---
 
-## `spec create`
+## `create issue`
 
-Create a new numbered feature branch and initialize a `spec.md` document.
+Create a GitHub issue and return its number and URL. Requires the `gh` CLI to be installed and authenticated (`gh auth login`).
 
 ```sh
-spec spec create [options]
+spec create issue --type <type> --title <title> --body <body>
 ```
 
-| Option | Short | Type | Description |
-|--------|-------|------|-------------|
-| `--description` | `-d` | string | Feature description (used to generate branch name) |
-| `--short-name` | | string | Override the generated branch name suffix |
-| `--number` | | integer | Override the auto-assigned feature number |
+| Option | Short | Type | Required | Description |
+|--------|-------|------|----------|-------------|
+| `--type` | `-t` | `fix` \| `feature` | yes | Issue type: `"fix"` for bug fixes, `"feature"` for new features, improvements, or refactors. Used as the branch-name prefix in `create spec`. |
+| `--title` | | string | yes | Descriptive issue title (max 256 characters). Becomes the GitHub issue title. |
+| `--body` | `-b` | string | yes | Full feature or bug description. Becomes the GitHub issue body. |
 
-**Branch naming**: The description is lowercased, stop words are removed, and the remaining words are joined with hyphens. The branch name is prefixed with the zero-padded feature number: `001-user-authentication`. Names longer than 244 bytes are truncated at the nearest word boundary.
-
-**Stop words removed**: `the`, `a`, `an`, `is`, `are`, `was`, `were`, `be`, `been`, `being`, `have`, `has`, `had`, `do`, `does`, `did`, `will`, `would`, `shall`, `should`, `may`, `might`, `can`, `could`, `add`, `new`, `create`, `update`, `fix`, `for`, `to`, `in`, `on`, `at`, `by`, `with`, `from`, `of`, `and`, `or`, `but`, `not`, `this`, `that`, `these`, `those`
-
-**Auto-numbering**: Scans both existing git branches (local + remote) and `specs/` directories to find the next unused number.
+**Validation**:
+- `--type` must be `"fix"` or `"feature"`
+- `--title` must not exceed 256 characters (GitHub's limit)
 
 **Output**:
 ```json
-{ "branch": "001-user-authentication", "specFile": "/path/to/repo/specs/001-user-authentication/spec.md", "featureNumber": 1 }
+{ "issueNumber": 42, "issueUrl": "https://github.com/owner/repo/issues/42" }
 ```
 
-**Template**: `specs/<branch>/spec.md` is populated from `.specify/templates/spec-template.md` in the calling repo, or the bundled `templates/spec-template.md` as a fallback.
+**Error output** includes a `scope` field indicating the failure stage:
+
+| Scope | Meaning |
+|-------|---------|
+| `validation` | Input failed a validation check before any GitHub call was made |
+| `issue_creation` | The `gh issue create` call failed |
+
+```json
+{ "error": "Issue title exceeds GitHub's maximum of 256 characters (got 300).", "scope": "validation" }
+```
+
+---
+
+## `create spec`
+
+Create a feature branch, generate a `spec.md` from the project template, commit it, and push the branch. Run `create issue` first to obtain the issue number.
+
+```sh
+spec create spec --type <type> --number <number> --slug <slug>
+```
+
+| Option | Short | Type | Required | Description |
+|--------|-------|------|----------|-------------|
+| `--type` | `-t` | `fix` \| `feature` | yes | Issue type: `"fix"` for bug fixes, `"feature"` for new features, improvements, or refactors. Used as the branch-name prefix (e.g., `feature/123-user-auth`). |
+| `--number` | `-n` | integer | yes | GitHub issue number returned by `create issue`. Included in the branch name and spec directory path (e.g., `feature/123-user-auth`, `specs/123-user-auth/`). |
+| `--slug` | `-s` | string | yes | Concise 2-4 word identifier for the feature, using lowercase letters, numbers, and hyphens (e.g., `"user-auth"`, `"analytics-dashboard"`). No leading, trailing, or consecutive hyphens. |
+
+**Validation**:
+- `--type` must be `"fix"` or `"feature"`
+- `--number` must be a positive integer
+- `--slug` must match `^[a-z0-9]+(-[a-z0-9]+)*$` (lowercase alphanumeric words separated by single hyphens)
+- Full branch name (`{type}/{number}-{slug}`) must be ≤ 255 bytes (GitHub's limit)
+
+**What it does**:
+
+1. Validates all inputs against GitHub constraints
+2. Creates and checks out a new branch: `{type}/{number}-{slug}` (e.g., `feature/123-user-auth`)
+3. Creates the spec directory: `specs/{number}-{slug}/` (e.g., `specs/123-user-auth/`)
+4. Generates `spec.md` from the project template (`.specify/templates/spec-template.md`, or the bundled fallback)
+5. Stages the new spec file with `git add`
+6. Commits with message: `Create spec for issue #{number}: {slug}`
+7. Pushes the branch to the remote with `git push -u origin {branchName}`
+
+**Output**:
+```json
+{
+  "branchName": "feature/123-user-auth",
+  "specFile": "/path/to/repo/specs/123-user-auth/spec.md",
+  "featureDir": "/path/to/repo/specs/123-user-auth"
+}
+```
+
+**Error output** includes a `scope` field indicating the failure stage:
+
+| Scope | Meaning |
+|-------|---------|
+| `validation` | Input failed a validation check before any filesystem or git operation |
+| `branch_creation` | `git checkout -b` failed |
+| `template_creation` | Creating the directory or writing `spec.md` failed |
+| `git_staging` | `git add` failed |
+| `git_commit` | `git commit` failed |
+| `git_push` | `git push` failed |
+
+```json
+{ "error": "remote: Repository not found.", "scope": "git_push" }
+```
+
+**Template**: `spec.md` is populated from `.specify/templates/spec-template.md` in the calling repo, or the bundled `templates/spec-template.md` as a fallback.
 
 ---
 
@@ -205,26 +272,4 @@ The tech context values are parsed from the `## Technical Context` section of `p
 **Output**:
 ```json
 { "updated": ["CLAUDE.md", ".github/copilot-instructions.md"] }
-```
-
----
-
-## `create-issue`
-
-Create a GitHub issue using the `gh` CLI.
-
-```sh
-spec create-issue [options]
-```
-
-| Option | Short | Type | Description |
-|--------|-------|------|-------------|
-| `--title` | `-t` | string | Issue title (required) |
-| `--body` | `-b` | string | Issue body (required) |
-
-Requires the `gh` CLI to be installed and authenticated.
-
-**Output**:
-```json
-{ "issueNumber": 42, "issueUrl": "https://github.com/owner/repo/issues/42" }
 ```

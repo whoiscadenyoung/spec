@@ -1,6 +1,6 @@
 # Overview
 
-`spec` is a TypeScript/Bun CLI that ports the [spec-kit](https://github.com/github/spec-kit) bash scripts into a distributable package. It provides a structured workflow for Spec-Driven Development: initializing a repository with AI agent prompt files, creating feature branches with specification documents, writing implementation plans, validating prerequisites, and keeping AI agent context files synchronized with the active feature.
+`spec` is a TypeScript/Bun CLI that ports the [spec-kit](https://github.com/github/spec-kit) bash scripts into a distributable package. It provides a structured workflow for Spec-Driven Development: initializing a repository with AI agent prompt files, creating GitHub issues and feature branches with specification documents, writing implementation plans, validating prerequisites, and keeping AI agent context files synchronized with the active feature.
 
 ## Origin
 
@@ -8,23 +8,43 @@ The original spec-kit scripts (`create-new-feature.sh`, `setup-plan.sh`, `check-
 
 ## Commands
 
-| Command | Replaces | Description |
-|---------|----------|-------------|
-| `init` | `specify init` | Bootstrap a repo with Copilot prompt files and VS Code settings |
-| `spec create` | `create-new-feature.sh` | Create a numbered feature branch and initialize `spec.md` |
-| `plan create` | `setup-plan.sh` | Create `plan.md` for the current feature branch |
-| `check-requirements` | `check-prerequisites.sh` | Validate that required spec docs exist |
-| `update-context` | `update-agent-context.sh` | Sync AI agent context files with the active feature |
+| Command | Description |
+|---------|-------------|
+| `init` | Bootstrap a repo with Copilot prompt files and VS Code settings |
+| `create issue` | Create a GitHub issue and return its number and URL |
+| `create spec` | Create a feature branch, generate `spec.md`, commit, and push |
+| `plan create` | Create `plan.md` for the current feature branch |
+| `check-requirements` | Validate that required spec docs exist |
+| `update-context` | Sync AI agent context files with the active feature |
+
+## Typical Workflow
+
+```sh
+# 1. Create a GitHub issue
+spec create issue --type feature --title "Add user authentication" --body "..."
+# → { "issueNumber": 42, "issueUrl": "..." }
+
+# 2. Create the feature branch and spec file
+spec create spec --type feature --number 42 --slug "user-auth"
+# → { "branchName": "feature/42-user-auth", "specFile": "...", "featureDir": "..." }
+
+# 3. Fill out the spec, then create the implementation plan
+spec plan create
+
+# 4. Keep AI agent context in sync as you work
+spec update-context --agent claude
+```
 
 ## Usage
 
-All commands output JSON to stdout. Errors are written as JSON to stderr and exit with code 1.
+All commands output JSON to stdout. Errors are written as JSON to stderr and exit with code 1. Error output includes a `scope` field on multi-stage commands to indicate which step failed.
 
 In development:
 
 ```sh
 bun dev init --ai copilot
-bun dev spec create -d "add user authentication"
+bun dev create issue --type feature --title "Add user auth" --body "..."
+bun dev create spec --type feature --number 42 --slug "user-auth"
 bun dev plan create
 bun dev check-requirements
 bun dev update-context --agent claude
@@ -34,7 +54,8 @@ From another repository (no install required):
 
 ```sh
 bunx spec init --ai copilot
-bunx spec spec create -d "add user authentication"
+bunx spec create issue --type feature --title "Add user auth" --body "..."
+bunx spec create spec --type feature --number 42 --slug "user-auth"
 bunx spec plan create
 bunx spec check-requirements
 bunx spec update-context --agent claude
@@ -47,6 +68,7 @@ bunx spec update-context --agent claude
 - **Bundled template fallback** — spec/plan templates are first sought in the calling repo's `.specify/templates/`, then fall back to copies bundled in this package
 - **Bundled agent files** — Copilot prompt files ship with the package; `init` copies them into the calling repo where they can be customized
 - **No global side effects** — all files are always written into the calling repo, never globally
+- **Scoped error output** — multi-stage commands include a `scope` field in error JSON to identify which step failed
 
 ## Directory Structure
 
@@ -55,7 +77,10 @@ spec/
 ├── src/
 │   ├── commands/          # One file per command (or command group)
 │   │   ├── init.ts        # init
-│   │   ├── spec.ts        # spec create
+│   │   ├── create.ts      # create group (registers create issue + create spec)
+│   │   ├── create/
+│   │   │   ├── issue.ts   # create issue
+│   │   │   └── spec.ts    # create spec
 │   │   ├── plan.ts        # plan create
 │   │   ├── check-requirements.ts
 │   │   └── update-context.ts

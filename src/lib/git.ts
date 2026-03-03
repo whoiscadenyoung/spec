@@ -62,6 +62,18 @@ export async function createBranch(name: string): Promise<void> {
   await Bun.$`git checkout -b ${name}`
 }
 
+export async function stageFile(filePath: string): Promise<void> {
+  await Bun.$`git add ${filePath}`
+}
+
+export async function commitWithMessage(message: string): Promise<void> {
+  await Bun.$`git commit -m ${message}`
+}
+
+export async function pushBranch(branchName: string): Promise<void> {
+  await Bun.$`git push -u origin ${branchName}`
+}
+
 export async function getExistingBranches(): Promise<string[]> {
   const branches: string[] = []
   try {
