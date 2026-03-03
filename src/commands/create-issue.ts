@@ -58,8 +58,8 @@ const createIssueCommand = defineCommand({
       if (flags.json) {
         console.log(JSON.stringify({ issueNumber, issueUrl }, null, 2))
       } else {
-        console.log(colors.green(`✓ Issue created: #${issueNumber}`))
-        console.log(colors.green(`✓ URL: ${issueUrl}`))
+        console.log(colors.green(`issueNumber: ${issueNumber}`))
+        console.log(colors.green(`issueUrl: ${issueUrl}`))
       }
     } catch (error) {
       console.error(colors.red(`✗ Failed to create issue: ${error instanceof Error ? error.message : String(error)}`))
