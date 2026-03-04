@@ -4,9 +4,6 @@ handoffs:
   - label: Build Technical Plan
     agent: speckit.plan
     prompt: Create a plan for the spec. I am building with...
-scripts:
-   sh: scripts/bash/check-prerequisites.sh --json --paths-only
-   ps: scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly
 ---
 
 ## User Input
@@ -17,6 +14,14 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## CLI Tools
+
+This CLI Tool is a custom helper library to assist you in the spec-driven development process. {SCRIPT} should be replaced with the actual script command:
+
+```
+bun /Users/cadenyoung/Developer/spec/src/index.ts
+```
+
 ## Outline
 
 Goal: Detect and reduce ambiguity or missing decision points in the active feature specification and record the clarifications directly in the spec file.
@@ -25,12 +30,26 @@ Note: This clarification workflow is expected to run (and be completed) BEFORE i
 
 Execution steps:
 
-1. Run `{SCRIPT}` from repo root **once** (combined `--json --paths-only` mode / `-Json -PathsOnly`). Parse minimal JSON payload fields:
-   - `FEATURE_DIR`
-   - `FEATURE_SPEC`
-   - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
-   - If JSON parsing fails, abort and instruct user to re-run `/speckit.specify` or verify feature branch environment.
-   - For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+1. **Use the spec CLI to get the current feature paths**:
+
+   a. **Run the command** from the repo root:
+
+      ```zsh
+      # Returns path variables for the current feature branch
+      {SCRIPT} check-requirements --paths-only
+      ```
+
+   b. **Read the command output** to extract the feature paths.
+
+      - The output is a JSON object. Parse these fields:
+        - `FEATURE_DIR`
+        - `FEATURE_SPEC`
+        - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
+
+   c. **If the command fails or JSON parsing fails, STOP immediately**: Instead:
+
+      - Report the error to the user and instruct them to re-run `/speckit.specify` or verify they are on a feature branch.
+      - Wait for user guidance before proceeding.
 
 2. Load the current spec file. Perform a structured ambiguity & coverage scan using this taxonomy. For each category, mark status: Clear / Partial / Missing. Produce an internal coverage map used for prioritization (do not output raw map unless no questions will be asked).
 
