@@ -59,23 +59,23 @@ export function isFeatureBranch(branch: string): boolean {
 }
 
 export async function createBranch(name: string): Promise<void> {
-  await Bun.$`git checkout -b ${name}`
+  await Bun.$`git checkout -b ${name}`.quiet()
 }
 
 export async function stageFile(filePath: string): Promise<void> {
-  await Bun.$`git add ${filePath}`
+  await Bun.$`git add ${filePath}`.quiet()
 }
 
 export async function commitWithMessage(message: string): Promise<void> {
-  await Bun.$`git commit -m ${message}`
+  await Bun.$`git commit -m ${message}`.quiet()
 }
 
 export async function pushBranch(branchName: string): Promise<void> {
-  await Bun.$`git push -u origin ${branchName}`
+  await Bun.$`git push -u origin ${branchName}`.quiet()
 }
 
 export async function linkBranchToIssue(issueNumber: number, branchName: string): Promise<void> {
-  await Bun.$`gh issue develop ${issueNumber} --name ${branchName}`
+  await Bun.$`gh issue develop ${issueNumber} --name ${branchName}`.quiet()
 }
 
 export async function getCommitSha(): Promise<string> {
@@ -89,7 +89,7 @@ export async function getRepoUrl(): Promise<string> {
 }
 
 export async function commentOnIssue(issueNumber: number, body: string): Promise<void> {
-  await Bun.$`gh issue comment ${issueNumber} --body ${body}`
+  await Bun.$`gh issue comment ${issueNumber} --body ${body}`.quiet()
 }
 
 export async function getExistingBranches(): Promise<string[]> {

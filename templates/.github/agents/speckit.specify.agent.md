@@ -8,9 +8,7 @@ handoffs:
     agent: speckit.clarify
     prompt: Clarify specification requirements
     send: true
-scripts:
-  sh: scripts/bash/create-new-feature.sh --json "{ARGS}"
-  ps: scripts/powershell/create-new-feature.ps1 -Json "{ARGS}"
+tools: [execute/runInTerminal, edit/createFile, edit/createDirectory, edit/editFiles, todo]
 ---
 
 ## User Input
@@ -21,59 +19,117 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## CLI Tools
+
+This CLI Tool is a custom helper library to assist you in the spec-driven development process. {SCRIPT} should be replaced with the actual script command:
+
+```
+bun /Users/cadenyoung/Developer/spec/src/index.ts
+```
+
+## Progress Tracking
+
+You MUST use #tool:todo to create a progress checklist for this outline. Update it as you complete each step.
+
+The steps should correspond to the outline as follows:
+
+1. Create a GitHub issue
+2. Create the spec file and branch
+3. Build the specification
+4. Update the spec file
+5. Validate specification quality
+6. Report completion results
+
 ## Outline
 
-The text the user typed after `/speckit.specify` in the triggering message **is** the feature description. Assume you always have it available in this conversation even if `{ARGS}` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
+The text the user typed in the inital prompt **is** the feature description. Assume you always have it available in this conversation even if `{ARGS}` appears literally below. Do not ask the user to repeat it unless they provided an empty command.
 
 Given that feature description, do this:
 
-1. **Generate a concise short name** (2-4 words) for the branch:
-   - Analyze the feature description and extract the most meaningful keywords
-   - Create a 2-4 word short name that captures the essence of the feature
-   - Use action-noun format when possible (e.g., "add-user-auth", "fix-payment-bug")
-   - Preserve technical terms and acronyms (OAuth2, API, JWT, etc.)
-   - Keep it concise but descriptive enough to understand the feature at a glance
-   - Examples:
-     - "I want to add user authentication" → "user-auth"
-     - "Implement OAuth2 integration for the API" → "oauth2-api-integration"
-     - "Create a dashboard for analytics" → "analytics-dashboard"
-     - "Fix payment processing timeout bug" → "fix-payment-timeout"
+1. **Use the spec CLI to create a GitHub issue for the feature**:
 
-2. **Check for existing branches before creating new one**:
+   a. **Generate a descriptive title** (less than 200 characters) for the issue:
 
-   a. First, fetch all remote branches to ensure we have the latest information:
+      - Summarize the feature in a clear, concise title
+      - Focus on the user value or problem being solved
+      - Avoid technical jargon or implementation details
+      - Examples:
+        - "Add user authentication to secure the application"
+        - "Integrate OAuth2 for improved API security"
+        - "Create an analytics dashboard for better insights"
+        - "Fix payment processing timeout to improve reliability"
+   
+   b. **Use the feature description as the issue body** without modification
 
-      ```bash
-      git fetch --all --prune
+   c. **Determine the issue type**:
+
+      - If the feature description only indicates a bug fix and nothing else, use "fix"
+      - For all other features, improvements, or new functionality, use "feature"
+
+   d. **Run the command to create the issue**:
+
+      ```zsh
+      # Create a new issue in the GitHub repository using the provided title and body.
+      {SCRIPT} create issue \
+      --title "{descriptiveTitle}" \
+      --type "{issueType}" \
+      --body "{featureDescription}"
       ```
 
-   b. Find the highest feature number across all sources for the short-name:
-      - Remote branches: `git ls-remote --heads origin | grep -E 'refs/heads/[0-9]+-<short-name>$'`
-      - Local branches: `git branch | grep -E '^[* ]*[0-9]+-<short-name>$'`
-      - Specs directories: Check for directories matching `specs/[0-9]+-<short-name>`
+   e. **Read the command output** to extract the issue number and URL.
+      
+      - The output is a JSON object with `issueNumber` and `issueUrl` fields
+   
+   f. **If an error occurs, STOP immediately**: Instead:
+   
+      - Report the error to the user in the chat window with the message: "Error creating issue ({errorType}): {errorMessage}".
+      - Wait for user guidance before proceeding.
+   
+   g. **Report the issue creation results** to the user in the chat window: "Created issue #{issueNumber}: {issueUrl}"
 
-   c. Determine the next available number:
-      - Extract all numbers from all three sources
-      - Find the highest number N
-      - Use N+1 for the new branch number
+2. **Use the spec CLI to create the spec for the feature**:
 
-   d. Run the script `{SCRIPT}` with the calculated number and short-name:
-      - Pass `--number N+1` and `--short-name "your-short-name"` along with the feature description
-      - Bash example: `{SCRIPT} --json --number 5 --short-name "user-auth" "Add user authentication"`
-      - PowerShell example: `{SCRIPT} -Json -Number 5 -ShortName "user-auth" "Add user authentication"`
+   a. **Generate a concise slug** (2-4 words) for the branch:
 
-   **IMPORTANT**:
-   - Check all three sources (remote branches, local branches, specs directories) to find the highest number
-   - Only match branches/directories with the exact short-name pattern
-   - If no existing branches/directories found with this short-name, start with number 1
-   - You must only ever run this script once per feature
-   - The JSON is provided in the terminal as output - always refer to it to get the actual content you're looking for
-   - The JSON output will contain BRANCH_NAME and SPEC_FILE paths
-   - For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot")
+      - Analyze the feature description and extract the most meaningful keywords
+      - Create a 2-4 word short name that captures the essence of the feature
+      - Use action-noun format when possible (e.g., "add-user-auth", "fix-payment-bug")
+      - Preserve technical terms and acronyms (OAuth2, API, JWT, etc.)
+      - Keep it concise but descriptive enough to understand the feature at a glance
+      - Examples:
+      - "I want to add user authentication" → "user-auth"
+      - "Implement OAuth2 integration for the API" → "oauth2-api-integration"
+      - "Create a dashboard for analytics" → "analytics-dashboard"
+      - "Fix payment processing timeout bug" → "fix-payment-timeout"
 
-3. Load `templates/spec-template.md` to understand required sections.
+   b. **Use the issue number from the previous step** without the hashtag (e.g., "123" not "#123") for the number flag
 
-4. Follow this execution flow:
+   c. **Use the issue type from the previous step** as an argument for the type flag.
+
+   d. **Run the command to create the spec**:
+
+      ```zsh
+      # The command will create and checkout a new branch in the format `{issueType}/{issueNumber}-{slug}` (e.g., "feature/123-user-auth")
+      # It will also generate a new spec file from the template and place it in `specs/{issueNumber}-{slug}/spec.md` (e.g., "specs/123-user-auth/spec.md")
+      # Finally, it will add the new spec file to git staging for the created branch, commit it with a message referencing the issue number, and push the branch to the remote repository.
+      {SCRIPT} create spec \
+      --slug "{slug}" \
+      --type "{issueType}" \
+      --number {issueNumber} \
+      ```
+
+   e. **Read the command output** to extract the branch name, spec file path, and feature directory.
+
+      - The output is a JSON object with `branchName`, `specFile`, and `featureDir` fields
+
+   f. **If an error occurs, STOP immediately**: Even if the spec file was created, DO NOT continue the workflow. Instead:
+   
+      - Report the error to the user in the chat window with the message: "Error creating spec ({errorType}): {errorMessage}".
+      - Wait for user guidance before proceeding.
+   
+   g. **Report the spec creation results** to the user in the chat window: "Created branch {branchName} with spec file at {specFile}"
+
+3. Follow this execution flow:
 
     1. Parse user description from Input
        If empty: ERROR "No feature description provided"
@@ -99,9 +155,9 @@ Given that feature description, do this:
     7. Identify Key Entities (if data involved)
     8. Return: SUCCESS (spec ready for planning)
 
-5. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the feature description (arguments) while preserving section order and headings.
+4. Write the specification to SPEC_FILE using the template structure, replacing placeholders with concrete details derived from the feature description (arguments) while preserving section order and headings.
 
-6. **Specification Quality Validation**: After writing the initial spec, validate it against quality criteria:
+5. **Specification Quality Validation**: After writing the initial spec, validate it against quality criteria:
 
    a. **Create Spec Quality Checklist**: Generate a checklist file at `FEATURE_DIR/checklists/requirements.md` using the checklist template structure with these validation items:
 
@@ -193,7 +249,7 @@ Given that feature description, do this:
 
    d. **Update Checklist**: After each validation iteration, update the checklist file with current pass/fail status
 
-7. Report completion with branch name, spec file path, checklist results, and readiness for the next phase (`/speckit.clarify` or `/speckit.plan`).
+6. Report completion with issue number and url, branch name, spec file path, checklist results, and readiness for the next phase (`/speckit.clarify` or `/speckit.plan`).
 
 **NOTE:** The script creates and checks out the new branch and initializes the spec file before writing.
 
