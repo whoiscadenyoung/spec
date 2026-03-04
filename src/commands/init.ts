@@ -44,19 +44,38 @@ const initCommand = defineCommand({
     const repoRoot = await getRepoRoot()
     const templateRoot = join(import.meta.dir, '..', '..', 'templates')
 
-    // Step 1: Copy .github/prompts/*.prompt.md files
+    const copied: string[] = []
+    const skipped: string[] = []
+
+    // Step 1a: Copy .github/prompts/*.prompt.md files
     const promptsSrcDir = join(templateRoot, '.github', 'prompts')
     const promptsDstDir = join(repoRoot, '.github', 'prompts')
 
     await mkdir(promptsDstDir, { recursive: true })
 
     const promptFiles = await readdir(promptsSrcDir)
-    const copied: string[] = []
-    const skipped: string[] = []
-
     for (const file of promptFiles) {
       const src = join(promptsSrcDir, file)
       const dst = join(promptsDstDir, file)
+
+      if (existsSync(dst) && !flags.force) {
+        skipped.push(file)
+      } else {
+        await copyFile(src, dst)
+        copied.push(file)
+      }
+    }
+
+    // Step 1b: Copy .github/agents/*.agent.md files
+    const agentsSrcDir = join(templateRoot, '.github', 'agents')
+    const agentsDstDir = join(repoRoot, '.github', 'agents')
+
+    await mkdir(agentsDstDir, { recursive: true })
+
+    const agentFiles = await readdir(agentsSrcDir)
+    for (const file of agentFiles) {
+      const src = join(agentsSrcDir, file)
+      const dst = join(agentsDstDir, file)
 
       if (existsSync(dst) && !flags.force) {
         skipped.push(file)
