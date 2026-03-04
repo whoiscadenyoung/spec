@@ -42,9 +42,9 @@ Execution steps:
    b. **Read the command output** to extract the feature paths.
 
       - The output is a JSON object. Parse these fields:
-        - `FEATURE_DIR`
-        - `FEATURE_SPEC`
-        - (Optionally capture `IMPL_PLAN`, `TASKS` for future chained flows.)
+        - `featureDir`
+        - `specPath`
+        - (Optionally capture `planPath`, `tasksPath` for future chained flows.)
 
    c. **If the command fails or JSON parsing fails, STOP immediately**: Instead:
 

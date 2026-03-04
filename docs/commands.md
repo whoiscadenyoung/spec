@@ -213,12 +213,12 @@ Exits with code 1 if required files are missing.
 **Output (`--paths-only`)**:
 ```json
 {
-  "REPO_ROOT": "...",
-  "BRANCH": "001-user-authentication",
-  "FEATURE_DIR": "...",
-  "FEATURE_SPEC": "...",
-  "IMPL_PLAN": "...",
-  "TASKS": "..."
+  "repoRoot": "...",
+  "branch": "001-user-authentication",
+  "featureDir": "...",
+  "specPath": "...",
+  "planPath": "...",
+  "tasksPath": "..."
 }
 ```
 

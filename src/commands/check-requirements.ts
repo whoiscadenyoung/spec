@@ -25,12 +25,12 @@ const checkRequirements = defineCommand({
 
     if (flags.pathsOnly) {
       console.log(JSON.stringify({
-        REPO_ROOT: paths.repoRoot,
-        BRANCH: paths.branch,
-        FEATURE_DIR: paths.featureDir,
-        FEATURE_SPEC: paths.specMd,
-        IMPL_PLAN: paths.planMd,
-        TASKS: paths.tasksMd,
+        repoRoot: paths.repoRoot,
+        branch: paths.branch,
+        featureDir: paths.featureDir,
+        specPath: paths.specMd,
+        planPath: paths.planMd,
+        tasksPath: paths.tasksMd,
       }))
       return
     }
