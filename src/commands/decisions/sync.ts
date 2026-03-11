@@ -10,8 +10,8 @@ import {
   printJsonSuccess,
 } from '../../lib/errors.js'
 
-const updateLogCommand = defineCommand({
-  name: 'update-log',
+const syncCommand = defineCommand({
+  name: 'sync',
   description:
     'Scan docs/decisions/records/ for all decision records and regenerate docs/decisions/decision-log.md ' +
     'with the correct frontmatter for every record. The log is fully auto-generated and safe to overwrite.',
@@ -46,9 +46,9 @@ const updateLogCommand = defineCommand({
         }
       }
     } catch (err) {
-      handleError(err, flags.json, 'decisions update-log')
+      handleError(err, flags.json, 'decisions sync')
     }
   },
 })
 
-export default updateLogCommand
+export default syncCommand
