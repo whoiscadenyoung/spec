@@ -10,7 +10,8 @@
       "WebFetch(domain:api.github.com)",
       "Bash(echo:*)",
       "Bash(bun run:*)",
-      "WebFetch(domain:code.visualstudio.com)"
+      "WebFetch(domain:code.visualstudio.com)",
+      "Bash(bun:*)"
     ]
   }
 }

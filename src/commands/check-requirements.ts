@@ -43,7 +43,7 @@ const checkRequirements = defineCommand({
     }
 
     if (!existsSync(paths.planMd)) {
-      errors.push(`plan.md not found — run: spec plan create`)
+      errors.push(`plan.md not found — run: spec create plan`)
     }
 
     if (flags.requireTasks && !existsSync(paths.tasksMd)) {

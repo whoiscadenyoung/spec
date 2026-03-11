@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { existsSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
-import { getRepoRoot, getCurrentBranch, isFeatureBranch } from '../lib/git.js'
-import { getFeaturePaths } from '../lib/paths.js'
+import { getRepoRoot, getCurrentBranch, isFeatureBranch } from '../../lib/git.js'
+import { getFeaturePaths } from '../../lib/paths.js'
 
 interface AgentConfig {
   name: string
@@ -82,8 +82,8 @@ async function updateAgentFile(
   }
 }
 
-const updateContext = defineCommand({
-  name: 'update-context',
+const agentContextCommand = defineCommand({
+  name: 'agent-context',
   description: 'Update AI agent context files with current feature info',
   options: {
     agent: option(
@@ -103,7 +103,7 @@ const updateContext = defineCommand({
     const paths = getFeaturePaths(repoRoot, branch)
 
     if (!existsSync(paths.planMd)) {
-      console.error(JSON.stringify({ error: `plan.md not found — run: spec plan create` }))
+      console.error(JSON.stringify({ error: `plan.md not found — run: spec create plan` }))
       process.exit(1)
     }
 
@@ -140,4 +140,4 @@ const updateContext = defineCommand({
   },
 })
 
-export default updateContext
+export default agentContextCommand

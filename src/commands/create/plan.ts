@@ -1,12 +1,11 @@
-import { defineCommand, defineGroup, option } from '@bunli/core'
-import { z } from 'zod'
+import { defineCommand } from '@bunli/core'
 import { mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
-import { getRepoRoot, getCurrentBranch, isFeatureBranch } from '../lib/git.js'
-import { getFeaturePaths, findFeatureDirByPrefix, resolveTemplate } from '../lib/paths.js'
+import { getRepoRoot, getCurrentBranch, isFeatureBranch } from '../../lib/git.js'
+import { getFeaturePaths, findFeatureDirByPrefix, resolveTemplate } from '../../lib/paths.js'
 
-const createCommand = defineCommand({
-  name: 'create',
+const createPlanCommand = defineCommand({
+  name: 'plan',
   description: 'Create a plan.md for the current feature branch',
   options: {},
   handler: async ({ }) => {
@@ -51,10 +50,4 @@ const createCommand = defineCommand({
   },
 })
 
-const planGroup = defineGroup({
-  name: 'plan',
-  description: 'Manage feature plans',
-  commands: [createCommand],
-})
-
-export default planGroup
+export default createPlanCommand

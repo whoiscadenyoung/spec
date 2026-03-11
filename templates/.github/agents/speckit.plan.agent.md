@@ -8,12 +8,7 @@ handoffs:
   - label: Create Checklist
     agent: speckit.checklist
     prompt: Create a checklist for the following domain...
-scripts:
-  sh: scripts/bash/setup-plan.sh --json
-  ps: scripts/powershell/setup-plan.ps1 -Json
-agent_scripts:
-  sh: scripts/bash/update-agent-context.sh __AGENT__
-  ps: scripts/powershell/update-agent-context.ps1 -AgentType __AGENT__
+tools: [execute/runInTerminal, edit/createFile, edit/editFiles, read/readFile, todo]
 ---
 
 ## User Input
@@ -24,22 +19,97 @@ $ARGUMENTS
 
 You **MUST** consider the user input before proceeding (if not empty).
 
+## CLI Tools
+
+This CLI Tool is a custom helper library to assist you in the spec-driven development process. {SCRIPT} should be replaced with the actual script command:
+
+```
+bun /Users/cadenyoung/Developer/spec/src/index.ts
+```
+
+## Progress Tracking
+
+You MUST use #tool:todo to create a progress checklist for this outline. Update it as you complete each step.
+
+The steps should correspond to the outline as follows:
+
+1. Get feature paths
+2. Create the plan file
+3. Load spec and constitution
+4. Execute plan workflow (research, design, contracts)
+5. Update agent context
+6. Report completion results
+
 ## Outline
 
-1. **Setup**: Run `{SCRIPT}` from repo root and parse JSON for FEATURE_SPEC, IMPL_PLAN, SPECS_DIR, BRANCH. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
+1. **Use the spec CLI to get the current feature paths**:
 
-2. **Load context**: Read FEATURE_SPEC and `/memory/constitution.md`. Load IMPL_PLAN template (already copied).
+   a. **Run the command** from the repo root:
 
-3. **Execute plan workflow**: Follow the structure in IMPL_PLAN template to:
+      ```zsh
+      # Returns path variables for the current feature branch
+      {SCRIPT} check-requirements --paths-only
+      ```
+
+   b. **Read the command output** to extract the feature paths.
+
+      - The output is a JSON object. Parse these fields:
+        - `featureDir`
+        - `specPath`
+        - `planPath`
+        - `branch`
+
+   c. **If the command fails or JSON parsing fails, STOP immediately**: Instead:
+
+      - Report the error to the user and instruct them to verify they are on a feature branch.
+      - Wait for user guidance before proceeding.
+
+2. **Use the spec CLI to create the plan file**:
+
+   a. **Run the command** from the repo root:
+
+      ```zsh
+      # Creates plan.md from template in the feature directory
+      {SCRIPT} create plan
+      ```
+
+   b. **Read the command output** to confirm the plan file was created.
+
+      - The output is a JSON object with `branch`, `planFile`, and `featureDir` fields.
+
+   c. **If an error occurs, STOP immediately**: Instead:
+
+      - Report the error to the user in the chat window with the message: "Error creating plan ({errorType}): {errorMessage}".
+      - Wait for user guidance before proceeding.
+
+   d. **Report the plan creation result** to the user: "Created plan file at {planFile}"
+
+3. **Load context**: Read the spec at `specPath` and `/memory/constitution.md`. Load the plan template that was just created at `planFile`.
+
+4. **Execute plan workflow**: Follow the structure in the plan template to:
    - Fill Technical Context (mark unknowns as "NEEDS CLARIFICATION")
    - Fill Constitution Check section from constitution
    - Evaluate gates (ERROR if violations unjustified)
    - Phase 0: Generate research.md (resolve all NEEDS CLARIFICATION)
    - Phase 1: Generate data-model.md, contracts/, quickstart.md
-   - Phase 1: Update agent context by running the agent script
    - Re-evaluate Constitution Check post-design
 
-4. **Stop and report**: Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generated artifacts.
+5. **Update agent context**:
+
+   a. **Run the command** from the repo root:
+
+      ```zsh
+      # Detects which AI agent is in use and updates the appropriate context file
+      {SCRIPT} update agent-context
+      ```
+
+   b. **Read the command output** to confirm which files were updated.
+
+      - The output is a JSON object with an `updated` array of file paths.
+
+   c. **If an error occurs**, report it to the user but continue — context update is non-blocking.
+
+6. **Stop and report**: Command ends after Phase 1 planning. Report branch, plan file path, and generated artifacts.
 
 ## Phases
 
@@ -81,14 +151,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Examples: public APIs for libraries, command schemas for CLI tools, endpoints for web services, grammars for parsers, UI contracts for applications
    - Skip if project is purely internal (build scripts, one-off tools, etc.)
 
-3. **Agent context update**:
-   - Run `{AGENT_SCRIPT}`
-   - These scripts detect which AI agent is in use
-   - Update the appropriate agent-specific context file
-   - Add only new technology from current plan
-   - Preserve manual additions between markers
-
-**Output**: data-model.md, /contracts/*, quickstart.md, agent-specific file
+**Output**: data-model.md, /contracts/*, quickstart.md
 
 ## Key rules
 
