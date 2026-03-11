@@ -19,10 +19,14 @@ const syncCommand = defineCommand({
     json: option(z.boolean().default(false), {
       description: 'Output results as JSON',
     }),
+    path: option(z.string().optional(), {
+      description: 'Override the repository root path (defaults to the git repo root)',
+      short: 'p',
+    }),
   },
   handler: async ({ flags }) => {
     try {
-      const repoRoot = await getRepoRoot()
+      const repoRoot = flags.path ?? await getRepoRoot()
       const decisionsDir = join(repoRoot, 'docs', 'decisions')
       const recordsDir = join(decisionsDir, 'records')
       const logPath = join(decisionsDir, 'decision-log.md')

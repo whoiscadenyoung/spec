@@ -45,10 +45,14 @@ const createDecisionCommand = defineCommand({
     json: option(z.boolean().default(false), {
       description: 'Output results as JSON',
     }),
+    path: option(z.string().optional(), {
+      description: 'Override the repository root path (defaults to the git repo root)',
+      short: 'p',
+    }),
   },
   handler: async ({ flags }) => {
     try {
-      const repoRoot = await getRepoRoot()
+      const repoRoot = flags.path ?? await getRepoRoot()
       const decisionsDir = join(repoRoot, 'docs', 'decisions')
       const recordsDir = join(decisionsDir, 'records')
       const logPath = join(decisionsDir, 'decision-log.md')
@@ -75,13 +79,17 @@ const createDecisionCommand = defineCommand({
       )
       const template = await Bun.file(templatePath).text()
 
+      const scope = flags.scope ?? ''
+      const status = flags.status ?? 'Proposed'
+      const description = flags.description ?? ''
+
       const content = template
         .replace(/\{ID\}/g, String(nextId))
         .replace(/\{TITLE\}/g, flags.title)
         .replace(/\{SLUG\}/g, slug)
-        .replace(/\{SCOPE\}/g, flags.scope)
-        .replace(/\{STATUS\}/g, flags.status)
-        .replace(/\{DESCRIPTION\}/g, flags.description)
+        .replace(/\{SCOPE\}/g, scope)
+        .replace(/\{STATUS\}/g, status)
+        .replace(/\{DESCRIPTION\}/g, description)
 
       await Bun.write(recordPath, content)
 
@@ -92,15 +100,15 @@ const createDecisionCommand = defineCommand({
         id: nextId,
         title: flags.title,
         slug,
-        scope: flags.scope,
-        status: flags.status,
-        description: flags.description,
+        scope,
+        status,
+        description,
       }
 
       if (flags.json) {
         const nextSteps: string[] = []
-        if (!flags.scope) nextSteps.push('Add a scope with --scope (e.g., "Architecture")')
-        if (!flags.description) nextSteps.push('Add a description with --description')
+        if (!scope) nextSteps.push('Add a scope with --scope (e.g., "Architecture")')
+        if (!description) nextSteps.push('Add a description with --description')
         printJsonSuccess(
           {
             record: `docs/decisions/records/${filename}`,
@@ -117,12 +125,12 @@ const createDecisionCommand = defineCommand({
         }
 
         const suggestions: string[] = []
-        if (!flags.scope) {
+        if (!scope) {
           suggestions.push(
             `  --scope: Add a brief scope (e.g., "Architecture", "Process", "Infrastructure")`
           )
         }
-        if (!flags.description) {
+        if (!description) {
           suggestions.push(`  --description: Add a short description summarising the decision`)
         }
         if (suggestions.length > 0) {
