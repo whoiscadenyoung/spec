@@ -2,6 +2,7 @@
 id: 0
 title: Use Decision Records
 slug: use-decision-records
+date: 2026-03-11
 scope: Documentation
 status: Accepted
 description: Decision to adopt ADRs for documenting architectural decisions made in this project.

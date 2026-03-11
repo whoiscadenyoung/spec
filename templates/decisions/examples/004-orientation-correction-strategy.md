@@ -2,6 +2,7 @@
 id: 4
 title: Orientation Correction via Brightness Sampling
 slug: orientation-correction-strategy
+date: 2026-03-11
 scope: Detection
 status: Accepted
 description: Sample top and bottom brightness bands to detect and correct 180° inversions after strip extraction.

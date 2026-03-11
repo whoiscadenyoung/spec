@@ -2,6 +2,7 @@
 id: {ID}
 title: {TITLE}
 slug: {SLUG}
+date: {DATE}
 scope: {SCOPE}
 status: {STATUS}
 description: {DESCRIPTION}

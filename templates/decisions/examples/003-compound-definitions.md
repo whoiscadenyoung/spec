@@ -2,6 +2,7 @@
 id: 3
 title: Compound Definitions as Injectable Constant
 slug: compound-definitions
+date: 2026-03-11
 scope: Architecture
 status: Accepted
 description: Introduce a CompoundDefinition array as an injectable parameter to decouple strip type from detector and reporter logic.

@@ -45,6 +45,7 @@ This is the template to create a new record. Fill in the YAML frontmatter fields
 | `id`          | Integer matching the file number (e.g. `1`)               |
 | `title`       | Short title describing what was decided                   |
 | `slug`        | Kebab-case version of the title (e.g. `use-typescript`)   |
+| `date`        | Date the decision was made, in `YYYY-MM-DD` format        |
 | `scope`       | Area of the project this affects                          |
 | `status`      | Proposed \| Accepted \| Deprecated \| Superseded by NNN   |
 | `description` | One-sentence summary for indexing and tooling             |

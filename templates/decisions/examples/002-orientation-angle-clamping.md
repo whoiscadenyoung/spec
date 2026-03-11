@@ -2,6 +2,7 @@
 id: 2
 title: Orientation Angle Clamping
 slug: orientation-angle-clamping
+date: 2026-03-11
 scope: Detection
 status: Accepted
 description: Clamp the deskew angle to (-90°, 90°] after normalisation to avoid accidental near-180° rotations during extraction.
