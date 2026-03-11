@@ -4,6 +4,7 @@ import createGroup from './commands/create.js'
 import updateGroup from './commands/update.js'
 import checkRequirements from './commands/check-requirements.js'
 import initCommand from './commands/init.js'
+import decisionsGroup from './commands/decisions.js'
 
 const cli = await createCLI({
   name: 'spec',
@@ -15,5 +16,6 @@ cli.command(initCommand)
 cli.command(createGroup)
 cli.command(updateGroup)
 cli.command(checkRequirements)
+cli.command(decisionsGroup)
 
 await cli.run()
