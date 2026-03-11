@@ -9,6 +9,11 @@ import {
   readAllRecords,
   generateDecisionLog,
 } from '../../lib/decisions.js'
+import {
+  Errors,
+  handleError,
+  printJsonSuccess,
+} from '../../lib/errors.js'
 
 const VALID_STATUSES = ['Proposed', 'Accepted'] as const
 
@@ -37,79 +42,98 @@ const createDecisionCommand = defineCommand({
       description: 'Status of the decision record: "Proposed" or "Accepted". Defaults to Proposed.',
       short: 'S',
     }),
+    json: option(z.boolean().default(false), {
+      description: 'Output results as JSON',
+    }),
   },
   handler: async ({ flags }) => {
-    const repoRoot = await getRepoRoot()
-    const decisionsDir = join(repoRoot, 'docs', 'decisions')
-    const recordsDir = join(decisionsDir, 'records')
-    const logPath = join(decisionsDir, 'decision-log.md')
+    try {
+      const repoRoot = await getRepoRoot()
+      const decisionsDir = join(repoRoot, 'docs', 'decisions')
+      const recordsDir = join(decisionsDir, 'records')
+      const logPath = join(decisionsDir, 'decision-log.md')
 
-    const slug = slugify(flags.title)
-    if (!slug) {
-      console.error(`Error: Could not generate a valid slug from title "${flags.title}".`)
-      process.exit(1)
-    }
+      const slug = slugify(flags.title)
+      if (!slug) {
+        throw Errors.INVALID_TITLE(flags.title)
+      }
 
-    const nextId = await getNextId(recordsDir)
-    const paddedId = formatId(nextId)
-    const filename = `${paddedId}-${slug}.md`
-    const recordPath = join(recordsDir, filename)
+      const nextId = await getNextId(recordsDir)
+      const paddedId = formatId(nextId)
+      const filename = `${paddedId}-${slug}.md`
+      const recordPath = join(recordsDir, filename)
 
-    const templatePath = join(
-      import.meta.dir,
-      '..',
-      '..',
-      '..',
-      'templates',
-      'decisions',
-      'records',
-      'record-template.md'
-    )
-    const template = await Bun.file(templatePath).text()
-
-    const content = template
-      .replace(/\{ID\}/g, String(nextId))
-      .replace(/\{TITLE\}/g, flags.title)
-      .replace(/\{SLUG\}/g, slug)
-      .replace(/\{SCOPE\}/g, flags.scope)
-      .replace(/\{STATUS\}/g, flags.status)
-      .replace(/\{DESCRIPTION\}/g, flags.description)
-
-    await Bun.write(recordPath, content)
-
-    // Update decision log
-    const records = await readAllRecords(recordsDir)
-    await Bun.write(logPath, generateDecisionLog(records))
-
-    const frontmatter = {
-      id: nextId,
-      title: flags.title,
-      slug,
-      scope: flags.scope,
-      status: flags.status,
-      description: flags.description,
-    }
-
-    console.log(`Created: ${recordPath}\n`)
-    console.log('Frontmatter:')
-    for (const [key, value] of Object.entries(frontmatter)) {
-      console.log(`  ${key}: ${value || '(empty)'}`)
-    }
-
-    const suggestions: string[] = []
-    if (!flags.scope) {
-      suggestions.push(
-        `  --scope: Add a brief scope (e.g., "Architecture", "Process", "Infrastructure")`
+      const templatePath = join(
+        import.meta.dir,
+        '..',
+        '..',
+        '..',
+        'templates',
+        'decisions',
+        'records',
+        'record-template.md'
       )
-    }
-    if (!flags.description) {
-      suggestions.push(`  --description: Add a short description summarising the decision`)
-    }
-    if (suggestions.length > 0) {
-      console.log(`\nSuggestions for missing fields:\n${suggestions.join('\n')}`)
-    }
+      const template = await Bun.file(templatePath).text()
 
-    console.log(`\nUpdated: ${logPath}`)
+      const content = template
+        .replace(/\{ID\}/g, String(nextId))
+        .replace(/\{TITLE\}/g, flags.title)
+        .replace(/\{SLUG\}/g, slug)
+        .replace(/\{SCOPE\}/g, flags.scope)
+        .replace(/\{STATUS\}/g, flags.status)
+        .replace(/\{DESCRIPTION\}/g, flags.description)
+
+      await Bun.write(recordPath, content)
+
+      const records = await readAllRecords(recordsDir)
+      await Bun.write(logPath, generateDecisionLog(records))
+
+      const frontmatter = {
+        id: nextId,
+        title: flags.title,
+        slug,
+        scope: flags.scope,
+        status: flags.status,
+        description: flags.description,
+      }
+
+      if (flags.json) {
+        const nextSteps: string[] = []
+        if (!flags.scope) nextSteps.push('Add a scope with --scope (e.g., "Architecture")')
+        if (!flags.description) nextSteps.push('Add a description with --description')
+        printJsonSuccess(
+          {
+            record: `docs/decisions/records/${filename}`,
+            log: 'docs/decisions/decision-log.md',
+            frontmatter,
+          },
+          nextSteps
+        )
+      } else {
+        console.log(`Created: ${recordPath}\n`)
+        console.log('Frontmatter:')
+        for (const [key, value] of Object.entries(frontmatter)) {
+          console.log(`  ${key}: ${value || '(empty)'}`)
+        }
+
+        const suggestions: string[] = []
+        if (!flags.scope) {
+          suggestions.push(
+            `  --scope: Add a brief scope (e.g., "Architecture", "Process", "Infrastructure")`
+          )
+        }
+        if (!flags.description) {
+          suggestions.push(`  --description: Add a short description summarising the decision`)
+        }
+        if (suggestions.length > 0) {
+          console.log(`\nSuggestions for missing fields:\n${suggestions.join('\n')}`)
+        }
+
+        console.log(`\nUpdated: ${logPath}`)
+      }
+    } catch (err) {
+      handleError(err, flags.json, 'decisions create')
+    }
   },
 })
 
