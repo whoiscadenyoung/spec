@@ -1,13 +1,13 @@
 ---
-id: {id}
-title: {title}
-slug: {slug}
-scope: {scope}
-status: {status}
-description: {description}
+id: {ID}
+title: {TITLE}
+slug: {SLUG}
+scope: {SCOPE}
+status: {STATUS}
+description: {DESCRIPTION}
 ---
 
-# {title}
+# {TITLE}
 
 ## Context
 
