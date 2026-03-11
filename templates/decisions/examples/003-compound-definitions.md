@@ -1,8 +1,13 @@
-# 003 - Compound Definitions as Injectable Constant
+---
+id: 3
+title: Compound Definitions as Injectable Constant
+slug: compound-definitions
+scope: Architecture
+status: Accepted
+description: Introduce a CompoundDefinition array as an injectable parameter to decouple strip type from detector and reporter logic.
+---
 
-## Status
-
-Accepted
+# Compound Definitions as Injectable Constant
 
 ## Context
 

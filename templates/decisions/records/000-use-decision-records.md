@@ -1,5 +1,5 @@
 ---
-id: 000
+id: 0
 title: Use Decision Records
 slug: use-decision-records
 scope: Documentation

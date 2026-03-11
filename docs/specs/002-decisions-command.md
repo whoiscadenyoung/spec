@@ -16,7 +16,8 @@ This should create the following folders in the project:
 - `docs/decisions/`: If it already exists, the command should throw an error and tell user to use --force flag. --force flag should replace current contents of `docs/decisions/`.
 - `docs/decisions/records`: Empty folder to hold future decision records.
 
-We should then copy the following files from `templates/`:
+We should then create the following files in the proper folders, copied from `templates/`:
 
 - `templates/decisions/records/000-use-decision-records.md` -> `docs/decisions/records/000-use-decision-records.md`
 - `templates/decisions/decision-log.md` -> `docs/decisions/decision-log.md`
+

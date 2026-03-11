@@ -20,7 +20,7 @@ The index of all decisions. Each accepted record gets a row in this table. Colum
 
 | Column   | Description                                      |
 | -------- | ------------------------------------------------ |
-| ID       | Zero-padded number matching the record filename  |
+| ID       | Integer matching the file number                 |
 | Decision | Short title of the decision                      |
 | Scope    | Area of the project affected (e.g. Process, API) |
 | Status   | One of: Proposed, Accepted, Deprecated, Superseded |
@@ -42,7 +42,7 @@ This is the template to create a new record. Fill in the YAML frontmatter fields
 
 | Field         | Description                                               |
 | ------------- | --------------------------------------------------------- |
-| `id`          | Zero-padded number (e.g. `"001"`)                         |
+| `id`          | Integer matching the file number (e.g. `1`)               |
 | `title`       | Short title describing what was decided                   |
 | `slug`        | Kebab-case version of the title (e.g. `use-typescript`)   |
 | `scope`       | Area of the project this affects                          |

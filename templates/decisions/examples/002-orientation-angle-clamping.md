@@ -1,8 +1,13 @@
-# 002 - Orientation Angle Clamping in normalizeRotatedRect
+---
+id: 2
+title: Orientation Angle Clamping
+slug: orientation-angle-clamping
+scope: Detection
+status: Accepted
+description: Clamp the deskew angle to (-90°, 90°] after normalisation to avoid accidental near-180° rotations during extraction.
+---
 
-## Status
-
-Accepted
+# Orientation Angle Clamping
 
 ## Context
 

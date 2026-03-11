@@ -1,8 +1,13 @@
-# 004 - Orientation Correction via Brightness Sampling
+---
+id: 4
+title: Orientation Correction via Brightness Sampling
+slug: orientation-correction-strategy
+scope: Detection
+status: Accepted
+description: Sample top and bottom brightness bands to detect and correct 180° inversions after strip extraction.
+---
 
-## Status
-
-Accepted
+# Orientation Correction via Brightness Sampling
 
 ## Context
 

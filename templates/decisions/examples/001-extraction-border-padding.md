@@ -1,8 +1,13 @@
-# 001 - Extraction Border Padding
+---
+id: 1
+title: Extraction Border Padding
+slug: extraction-border-padding
+scope: Detection
+status: Accepted
+description: Add a replicated border to the source image before warpAffine to prevent strip clipping when near frame edges.
+---
 
-## Status
-
-Accepted
+# Extraction Border Padding
 
 ## Context
 
