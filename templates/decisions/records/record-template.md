@@ -1,12 +1,13 @@
 ---
-title: {title}
 id: {id}
+title: {title}
 slug: {slug}
+scope: {scope}
 status: {status}
-description: {}
+description: {description}
 ---
 
-# Short Decision Title
+# {title}
 
 ## Context
 
