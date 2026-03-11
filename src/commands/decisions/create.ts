@@ -8,14 +8,13 @@ import {
   getNextId,
   readAllRecords,
   generateDecisionLog,
+  VALID_STATUSES,
 } from '../../lib/decisions.js'
 import {
   Errors,
   handleError,
   printJsonSuccess,
 } from '../../lib/errors.js'
-
-const VALID_STATUSES = ['Proposed', 'Accepted'] as const
 
 const createDecisionCommand = defineCommand({
   name: 'create',

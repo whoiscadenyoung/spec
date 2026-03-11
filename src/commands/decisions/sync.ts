@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
 import { getRepoRoot } from '../../lib/git.js'
-import { readAllRecords, generateDecisionLog } from '../../lib/decisions.js'
+import { readAllRecords, generateDecisionLog, validateAllRecords } from '../../lib/decisions.js'
 import {
   Errors,
   handleError,
@@ -33,6 +33,11 @@ const syncCommand = defineCommand({
 
       if (!existsSync(recordsDir)) {
         throw Errors.NOT_INITIALIZED
+      }
+
+      const validationErrors = await validateAllRecords(recordsDir, true)
+      if (validationErrors.length > 0) {
+        throw Errors.VALIDATION_FAILED(validationErrors.length)
       }
 
       const records = await readAllRecords(recordsDir)

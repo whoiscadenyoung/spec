@@ -9,6 +9,7 @@ import {
   handleError,
   printJsonSuccess,
 } from '../../lib/errors.js'
+import { readAllRecords, generateDecisionLog } from '../../lib/decisions.js'
 
 const initDecisionsCommand = defineCommand({
   name: 'init',
@@ -49,13 +50,12 @@ const initDecisionsCommand = defineCommand({
       const templateRoot = join(import.meta.dir, '..', '..', '..', 'templates', 'decisions')
 
       await copyFile(
-        join(templateRoot, 'decision-log.md'),
-        join(decisionsDir, 'decision-log.md')
-      )
-      await copyFile(
         join(templateRoot, 'records', '000-use-decision-records.md'),
         join(recordsDir, '000-use-decision-records.md')
       )
+
+      const records = await readAllRecords(recordsDir)
+      await Bun.write(join(decisionsDir, 'decision-log.md'), generateDecisionLog(records))
 
       const files = [
         'docs/decisions/decision-log.md',

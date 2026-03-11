@@ -8,6 +8,8 @@ import createDecisionCommand from '../../../src/commands/decisions/create.js'
 import syncCommand from '../../../src/commands/decisions/sync.js'
 import decisionsGroup from '../../../src/commands/decisions.js'
 
+const recordsDir = () => join(dir, 'docs', 'decisions', 'records')
+
 let dir: string
 
 beforeEach(async () => {
@@ -20,7 +22,6 @@ afterEach(() => {
 })
 
 const logPath = () => join(dir, 'docs', 'decisions', 'decision-log.md')
-const recordsDir = () => join(dir, 'docs', 'decisions', 'records')
 
 // ---------------------------------------------------------------------------
 // Success states
@@ -150,5 +151,75 @@ describe('decisions sync — errors', () => {
     } finally {
       cleanupDir(freshDir)
     }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Validation guard
+// ---------------------------------------------------------------------------
+
+describe('decisions sync — validation guard', () => {
+  it('exits with a non-zero code when records have invalid frontmatter', async () => {
+    writeFileSync(
+      join(recordsDir(), '001-my-decision.md'),
+      '---\nid: 99\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: Test.\n---\n\nBody.'
+    )
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'sync', '--path', dir]
+    )
+    expect(result.exitCode).not.toBe(0)
+  })
+
+  it('reports VALIDATION_FAILED when records are invalid', async () => {
+    writeFileSync(
+      join(recordsDir(), '001-my-decision.md'),
+      '---\nid: 99\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: Test.\n---\n\nBody.'
+    )
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'sync', '--path', dir]
+    )
+    expect(result.stderr).toContain('VALIDATION_FAILED')
+  })
+
+  it('suggests running decisions validate in the error output', async () => {
+    writeFileSync(
+      join(recordsDir(), '001-my-decision.md'),
+      '---\nid: 99\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: Test.\n---\n\nBody.'
+    )
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'sync', '--path', dir]
+    )
+    expect(result.stderr).toContain('validate')
+  })
+
+  it('outputs valid JSON error with VALIDATION_FAILED code when records are invalid', async () => {
+    writeFileSync(
+      join(recordsDir(), '001-my-decision.md'),
+      '---\nid: 99\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: Test.\n---\n\nBody.'
+    )
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'sync', '--path', dir, '--json']
+    )
+    expect(() => JSON.parse(result.stdout)).not.toThrow()
+    expect(JSON.parse(result.stdout).status).toBe('error')
+    expect(JSON.parse(result.stdout).error.code).toBe('VALIDATION_FAILED')
+  })
+
+  it('does not overwrite the log when validation fails', async () => {
+    const staleContent = '# Stale log'
+    writeFileSync(logPath(), staleContent)
+    writeFileSync(
+      join(recordsDir(), '001-my-decision.md'),
+      '---\nid: 99\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: Test.\n---\n\nBody.'
+    )
+    await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'sync', '--path', dir]
+    )
+    expect(readFileSync(logPath(), 'utf8')).toBe(staleContent)
   })
 })

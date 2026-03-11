@@ -280,3 +280,191 @@ describe('generateDecisionLog', () => {
     expect(dataRows).toHaveLength(0)
   })
 })
+
+// ---------------------------------------------------------------------------
+// VALID_STATUSES
+// ---------------------------------------------------------------------------
+
+describe('VALID_STATUSES', () => {
+  it('exports a non-empty array of valid status strings', () => {
+    expect(Array.isArray(VALID_STATUSES)).toBe(true)
+    expect(VALID_STATUSES.length).toBeGreaterThan(0)
+  })
+
+  it('includes Proposed and Accepted', () => {
+    expect(VALID_STATUSES).toContain('Proposed')
+    expect(VALID_STATUSES).toContain('Accepted')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// validateRecord
+// ---------------------------------------------------------------------------
+
+describe('validateRecord', () => {
+  const validContent = (id: number, slug: string) =>
+    `---\nid: ${id}\ntitle: My Decision\nslug: ${slug}\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: A test.\n---\n\nBody.`
+
+  it('returns no errors for a valid record', () => {
+    const errors = validateRecord('001-my-decision.md', validContent(1, 'my-decision'))
+    expect(errors).toHaveLength(0)
+  })
+
+  it('returns ID_MISMATCH when frontmatter id does not match filename prefix', () => {
+    const content = validContent(5, 'my-decision')
+    const errors = validateRecord('001-my-decision.md', content)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('ID_MISMATCH')
+  })
+
+  it('ID_MISMATCH error is fixable', () => {
+    const content = validContent(5, 'my-decision')
+    const errors = validateRecord('001-my-decision.md', content)
+    const err = errors.find((e) => e.code === 'ID_MISMATCH')
+    expect(err?.fixable).toBe(true)
+  })
+
+  it('returns SLUG_MISMATCH when frontmatter slug does not match filename slug', () => {
+    const content = validContent(1, 'wrong-slug')
+    const errors = validateRecord('001-my-decision.md', content)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('SLUG_MISMATCH')
+  })
+
+  it('SLUG_MISMATCH error is fixable', () => {
+    const content = validContent(1, 'wrong-slug')
+    const errors = validateRecord('001-my-decision.md', content)
+    const err = errors.find((e) => e.code === 'SLUG_MISMATCH')
+    expect(err?.fixable).toBe(true)
+  })
+
+  it('returns INVALID_ID_TYPE when id is quoted as a string', () => {
+    const content = `---\nid: "1"\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('INVALID_ID_TYPE')
+  })
+
+  it('INVALID_ID_TYPE error is fixable', () => {
+    const content = `---\nid: "1"\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: Proposed\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const err = errors.find((e) => e.code === 'INVALID_ID_TYPE')
+    expect(err?.fixable).toBe(true)
+  })
+
+  it('returns INVALID_STATUS when status is not a valid value', () => {
+    const content = `---\nid: 1\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: draft\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('INVALID_STATUS')
+  })
+
+  it('INVALID_STATUS error is not fixable', () => {
+    const content = `---\nid: 1\ntitle: My Decision\nslug: my-decision\ndate: 2024-01-15\nscope: Architecture\nstatus: draft\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const err = errors.find((e) => e.code === 'INVALID_STATUS')
+    expect(err?.fixable).toBe(false)
+  })
+
+  it('returns INVALID_DATE when date does not match YYYY-MM-DD', () => {
+    const content = `---\nid: 1\ntitle: My Decision\nslug: my-decision\ndate: 15/01/2024\nscope: Architecture\nstatus: Proposed\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('INVALID_DATE')
+  })
+
+  it('INVALID_DATE error is not fixable', () => {
+    const content = `---\nid: 1\ntitle: My Decision\nslug: my-decision\ndate: 15/01/2024\nscope: Architecture\nstatus: Proposed\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    const err = errors.find((e) => e.code === 'INVALID_DATE')
+    expect(err?.fixable).toBe(false)
+  })
+
+  it('each error includes file, code, message, and fixable fields', () => {
+    const content = validContent(5, 'wrong-slug')
+    const errors = validateRecord('001-my-decision.md', content)
+    for (const err of errors) {
+      expect(typeof err.file).toBe('string')
+      expect(typeof err.code).toBe('string')
+      expect(typeof err.message).toBe('string')
+      expect(typeof err.fixable).toBe('boolean')
+    }
+  })
+
+  it('can detect multiple errors in a single record', () => {
+    const content = `---\nid: 5\ntitle: My Decision\nslug: wrong-slug\ndate: 2024-01-15\nscope: Architecture\nstatus: draft\ndescription: A test.\n---\n\nBody.`
+    const errors = validateRecord('001-my-decision.md', content)
+    expect(errors.length).toBeGreaterThan(1)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// validateAllRecords
+// ---------------------------------------------------------------------------
+
+describe('validateAllRecords', () => {
+  let tmpDir: string
+
+  beforeAll(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'spec-validate-'))
+  })
+
+  afterAll(() => {
+    rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  const makeContent = (id: number, slug: string, extra?: Partial<Record<string, string>>) => {
+    const fields = { id: String(id), title: 'My Decision', slug, date: '2024-01-15', scope: 'Architecture', status: 'Proposed', description: 'A test.', ...extra }
+    const fm = Object.entries(fields).map(([k, v]) => `${k}: ${v}`).join('\n')
+    return `---\n${fm}\n---\n\nBody.`
+  }
+
+  it('returns an empty array when all records are valid', async () => {
+    const dir = mkdtempSync(join(tmpDir, 'valid-'))
+    writeFileSync(join(dir, '001-my-decision.md'), makeContent(1, 'my-decision'))
+    writeFileSync(join(dir, '002-another.md'), makeContent(2, 'another'))
+    const errors = await validateAllRecords(dir)
+    expect(errors).toHaveLength(0)
+  })
+
+  it('returns errors from all records', async () => {
+    const dir = mkdtempSync(join(tmpDir, 'multi-'))
+    writeFileSync(join(dir, '001-my-decision.md'), makeContent(99, 'my-decision'))
+    writeFileSync(join(dir, '002-another.md'), makeContent(99, 'wrong'))
+    const errors = await validateAllRecords(dir)
+    expect(errors.length).toBeGreaterThan(1)
+  })
+
+  it('returns DUPLICATE_ID when two filenames share the same numeric prefix', async () => {
+    const dir = mkdtempSync(join(tmpDir, 'dup-'))
+    writeFileSync(join(dir, '001-first.md'), makeContent(1, 'first'))
+    writeFileSync(join(dir, '001-second.md'), makeContent(1, 'second'))
+    const errors = await validateAllRecords(dir)
+    const codes = errors.map((e) => e.code)
+    expect(codes).toContain('DUPLICATE_ID')
+  })
+
+  it('DUPLICATE_ID error is not fixable', async () => {
+    const dir = mkdtempSync(join(tmpDir, 'dup-fix-'))
+    writeFileSync(join(dir, '001-first.md'), makeContent(1, 'first'))
+    writeFileSync(join(dir, '001-second.md'), makeContent(1, 'second'))
+    const errors = await validateAllRecords(dir)
+    const err = errors.find((e) => e.code === 'DUPLICATE_ID')
+    expect(err?.fixable).toBe(false)
+  })
+
+  it('returns an empty array when the directory does not exist', async () => {
+    const errors = await validateAllRecords('/tmp/__nonexistent_spec_dir__')
+    expect(errors).toHaveLength(0)
+  })
+
+  it('with earlyExit=true, stops after the first error found', async () => {
+    const dir = mkdtempSync(join(tmpDir, 'early-'))
+    writeFileSync(join(dir, '001-first.md'), makeContent(99, 'wrong-slug'))
+    writeFileSync(join(dir, '002-second.md'), makeContent(99, 'wrong'))
+    const allErrors = await validateAllRecords(dir)
+    const earlyErrors = await validateAllRecords(dir, true)
+    expect(earlyErrors.length).toBeLessThan(allErrors.length)
+    expect(earlyErrors.length).toBe(1)
+  })
+})

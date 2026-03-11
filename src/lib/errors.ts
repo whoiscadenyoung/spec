@@ -36,6 +36,13 @@ export const Errors = {
     ['Run this command from within a git repository.']
   ),
 
+  VALIDATION_FAILED: (count: number) =>
+    new SpecError(
+      'VALIDATION_FAILED',
+      `Found ${count} validation error(s) in decision records.`,
+      ['Run `decisions validate` to detect and fix issues.']
+    ),
+
   unknown: (err: unknown) =>
     new SpecError('UNKNOWN', err instanceof Error ? err.message : String(err)),
 }
