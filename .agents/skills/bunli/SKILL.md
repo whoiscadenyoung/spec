@@ -1,254 +1,315 @@
 ---
 name: bunli
-description: >
-  Comprehensive guide for developing with the Bunli CLI framework — a TypeScript-first CLI toolkit for Bun.
-  Use this skill whenever you are building CLI commands with @bunli/core,
-  creating or testing plugins, scaffolding new CLIs, writing bunli.config.ts, or working with any
-  @bunli/* packages. Trigger on imports of @bunli/core, @bunli/cli, @bunli/test, @bunli/utils,
-  @bunli/plugin-*, or create-bunli. Also trigger when the user mentions bunli commands, the bunli
-  project structure, or asks how to structure a CLI project built on bunli.
+description: "Build type-safe CLIs with Bun. Use when: (1) Creating a new CLI application with Bun, (2) Adding commands with defineCommand/option(), (3) Building a plugin system, (4) Using prompt/spinner APIs for interactive CLIs, (5) Building TUI components, (6) Publishing CLI to npm. For advanced TUI (custom components, animations, full layout control), use the 'opentui' skill. Covers: defineCommand, option() APIs, plugin architecture, bunli CLI commands (dev/build/generate/test/release/init/doctor), create-bunli scaffolding, and utilities."
 ---
 
-# Bunli CLI Framework
+# Bunli Skill
 
-## Quick Reference
+Build type-safe CLIs with Bun. See `references/` for detailed documentation.
 
-### Key Commands
+## Quick Start
 
 ```bash
-# Development (from repo root)
-bun dev                    # Start development mode with watch
-bun test                   # Run all tests
-bun run build              # Build all packages
-bun run clean              # Clean build artifacts
-./dist/cli                 # Run built executable
+# Create new CLI
+bunli init my-cli
+
+# Or manually:
+mkdir my-cli && cd my-cli
+npm init -y
+bun add @bunli/core @bunli/utils @bunli/tui
+bun add -d bunli typescript
 ```
 
-### File Conventions
-
-- **Naming**: Always kebab-case (`my-command.ts`, not `MyCommand.ts`)
-- **Tests**: `.test.ts` suffix in `test/` directories
-- **Exports**: Prefer named exports over default
-
-### Common Imports
+Then create your entry point:
 
 ```typescript
-// Core framework
-import { defineCommand, defineConfig, option, createCLI } from '@bunli/core'
-import { createPlugin } from '@bunli/core/plugin'
+// cli.ts
+import { createCLI } from "@bunli/core"
+import { defineCommand, option } from "@bunli/core"
+import { z } from "zod"
 
-// Utilities
-import { colors, spinner, prompt } from '@bunli/utils'
-
-// Plugins
-import { aiAgentPlugin } from '@bunli/plugin-ai-detect'
-import { configMergerPlugin } from '@bunli/plugin-config'
-
-// Testing
-import { testCommand } from '@bunli/test'
-```
-
----
-
-## Project Structure
-
-This is a monorepo organized into apps, packages, and examples.
-
-### Core Packages
-
-| Path | Purpose |
-|------|---------|
-| `@bunli/core` | Core CLI framework — `defineCommand`, `createCLI`, `option`, type-safe plugin system |
-| `@bunli/generator` | TypeScript type generation from CLI commands |
-| `@bunli/cli` | Main `bunli` CLI app (build, dev, init, release, test commands) |
-| `@bunli/create-bunli` | Project scaffolding tool with templates |
-| `@bunli/web` | Next.js documentation website |
-
-### Plugin Packages
-
-| Path | Purpose |
-|------|---------|
-| `@bunli/plugin-ai-detect` | Detects AI coding assistants (Claude, Cursor) from environment |
-| `@bunli/plugin-config` | Loads and merges configuration from multiple sources |
-| `@bunli/test` | Testing utilities with custom matchers and CLI test helpers |
-| `@bunli/utils` | Shared utilities (colors, prompts, spinners, validation) |
-
----
-
-## CLI Development Patterns
-
-### Command Definition
-
-```typescript
-import { defineCommand, option } from '@bunli/core'
-import { z } from 'zod'
-
-export const buildCommand = defineCommand({
-  name: 'build',
-  description: 'Build the project',
+const hello = defineCommand({
+  name: "hello",
+  description: "Print a greeting",
   options: {
-    output: option(
-      z.string().default('dist'),
-      { description: 'Output directory', short: 'o' }
-    ),
-    compress: option(
-      z.boolean().default(false),
-      { description: 'Compress output' }
-    )
+    name: option(z.string().default("World"), { short: "n", description: "Name to greet" }),
+    count: option(z.coerce.number().default(1), { short: "c", description: "Number of times" })
   },
-  handler: async ({ flags, positional, shell, env, cwd, prompt, spinner, colors, context }) => {
-    const spin = spinner(`Building to ${flags.output}...`)
-    spin.start()
-
-    // Access plugin context if available
-    if (context?.env.isAIAgent) {
-      console.log(`AI Agent detected: ${context.store.aiAgents.join(', ')}`)
+  handler: ({ flags, signal }) => {
+    if (signal.aborted) return
+    for (let i = 0; i < flags.count; i++) {
+      console.log(`Hello, ${flags.name}!`)
     }
-
-    await shell`bun build src/index.ts --outdir ${flags.output}`
-    spin.succeed('Build complete!')
   }
 })
-```
 
-All handler utilities — `flags`, `positional`, `shell`, `env`, `cwd`, `prompt`, `spinner`, `colors`, `context` — are injected automatically and are fully type-safe.
-
-### Configuration (`bunli.config.ts`)
-
-```typescript
-import { defineConfig } from '@bunli/core'
-
-export default defineConfig({
-  name: 'my-cli',
-  version: '1.0.0',
-  description: 'My CLI tool',
-  build: {
-    entry: 'src/index.ts',
-    outdir: 'dist',
-    targets: ['node16', 'bun'],
-    compress: true
-  },
-  plugins: [
-    // Plugin configuration
-  ]
+const cli = await createCLI({
+  name: "my-cli",
+  version: "0.1.0",
 })
+
+cli.command(hello)
+await cli.run()
 ```
 
-Config types are defined in `@bunli/core`.
+Run with: `bun run cli.ts`
+
+## Package Versions
+
+Find current versions:
+```bash
+npm view @bunli/core      # Latest version
+npm view @bunli/utils    # Latest version
+npm view @bunli/tui      # Latest version
+npm view bunli           # CLI version
+```
+
+## Quick Decision Trees
+
+### "I need to define a command"
+
+```
+Define Command?
+├─ Basic command → defineCommand({ name: "mycmd", description: "...", handler: ({ flags }) => {...} })
+├─ With options → Add options: { options: { debug: option(z.coerce.boolean(), { short: "d" }) } }
+├─ Nested commands → Use defineGroup({ name: "group", description: "...", commands: [...] })
+├─ With alias → Add alias: "m" for "mycmd"
+└─ With TUI → Add render (optionally keep handler; render commands run without TUI flags)
+```
+
+### "I need to add options"
+
+```
+Add Options?
+├─ Boolean flag → option(z.coerce.boolean(), { short: "d", description: "Debug output" })
+├─ String input → option(z.string(), { description: "Name" })
+├─ Number input → option(z.coerce.number(), { description: "Port" })
+├─ Enum/choice → option(z.enum(["dev", "prod"]), { description: "Environment" })
+├─ With default → option(z.string().default("default"))
+└─ Required → option(z.string().min(1))
+```
+
+> **Important**: Use `z.coerce.number()` and `z.coerce.boolean()` for numeric and boolean flags because CLI args are strings. Enums should use `z.enum(...)`.
+>
+> `-v` is reserved globally for `--version`, so avoid `short: "v"` for command-local options.
+
+### "I need to create a plugin"
+
+```
+Create Plugin?
+├─ Direct plugin → createPlugin({ name: "my-plugin", setup(ctx) {...} })
+├─ Factory → createPlugin((options) => ({ name: "my-plugin", ... }))
+├─ With store → Add store: { counter: 0 }, access via context.store
+└─ Lifecycle hooks → setup, configResolved, beforeCommand, afterCommand
+```
+
+### "I need to use prompts"
+
+```
+Use Prompt?
+├─ Text input → prompt("Enter name")
+├─ Yes/No → confirm("Continue?")
+├─ Single choice → select("Select framework", { options: [...] })
+├─ Multiple choice → multiselect("Select tools", { options: [...] })
+└─ Password → password("Enter password")
+```
+
+### "I keep hitting validation errors"
+
+```
+Validation Errors?
+├─ Numbers not working → Use z.coerce.number() instead of z.number()
+├─ Booleans not working → Use z.coerce.boolean(); pass --flag=true/false for explicit values
+├─ Enums not working → Use z.enum([...]), not z.coerce.enum(...)
+├─ createCLI returns Promise → Use await createCLI() or .then()
+└─ Commands not registering → Use cli.command(cmd), not commands: [cmd]
+```
+
+### "I need to build for production"
+
+```
+Build?
+├─ Development → bunli dev (hot reload)
+├─ Production build → bunli build
+├─ Cross-compile → bunli build --targets darwin-arm64,linux-x64
+├─ With bytecode → bunli build --bytecode
+├─ Generate types → bunli generate
+└─ Release → bunli release
+```
+
+### "I need advanced TUI (beyond basic forms)"
+
+```
+Advanced TUI?
+├─ Custom components beyond Bunli's built-in form/layout set → Use opentui skill
+├─ Advanced animations (timeline, keyframes) → Use opentui skill
+├─ Full Flexbox layout control → Use opentui skill
+├─ Custom renderables → Use opentui skill
+└─ Just need Bunli components/forms/charts → Use @bunli/tui (covered here)
+```
+
+### "I need predictable TUI buffer behavior"
+
+```
+Buffer Mode?
+├─ Global default policy → standard buffer mode
+├─ Use fullscreen alternate buffer → set tui.renderer.bufferMode = "alternate" in defineConfig
+├─ Per-command override → set command.tui.renderer.bufferMode
+└─ Keep standard-buffer output behavior → set bufferMode = "standard" explicitly
+```
+
+## Product Index
+
+### Core
+| Topic | Reference |
+|-------|-----------|
+| Command definition | `references/core/commands.md` |
+| Type safety patterns | `references/core/types.md` |
 
 ### Plugin System
+| Topic | Reference |
+|-------|-----------|
+| Plugin architecture | `references/plugin/system.md` |
+| Built-in plugins | `references/plugin/built-ins.md` |
 
-Create plugins with `createPlugin`:
+### CLI Commands
+| Topic | Reference |
+|-------|-----------|
+| CLI commands | `references/cli/commands.md` |
+| Project scaffolding | `references/cli/scaffold.md` |
 
+### Utilities
+| Topic | Reference |
+|-------|-----------|
+| Prompts | `references/utils/prompts.md` |
+| Spinners | `references/utils/spinner.md` |
+| Colors | `references/utils/colors.md` |
+
+### TUI
+| Topic | Reference |
+|-------|-----------|
+| Components | `references/tui/components.md` |
+| OpenTUI (advanced) | Use `opentui` skill |
+
+### OpenTUI Integration
+| Topic | Reference |
+|-------|-----------|
+| When to use OpenTUI | See "Relationship with OpenTUI" below |
+
+## Core Concepts
+
+### CLI Structure
 ```typescript
-import { createPlugin } from '@bunli/core/plugin'
+// my-cli/src/commands/hello.ts
+import { defineCommand, option } from "@bunli/core"
+import { z } from "zod"
 
-interface MyStore {
-  count: number
-  messages: string[]
-}
-
-const myPlugin = createPlugin<MyStore>({
-  name: 'my-plugin',
-  store: { count: 0, messages: [] },
-  beforeCommand({ store }) {
-    store.count++
+export const hello = defineCommand({
+  name: "hello",
+  description: "Greet someone",
+  options: {
+    name: option(z.string().default("World"), {
+      short: "n",
+      description: "Name to greet"
+    })
+  },
+  handler: ({ flags }) => {
+    console.log(`Hello, ${flags.name}!`)
   }
 })
 ```
 
-Register plugins when creating the CLI — use `as const` for better type inference:
-
+### Plugin Creation
 ```typescript
-const cli = await createCLI({
-  name: 'my-cli',
-  plugins: [
-    aiAgentPlugin(),
-    configMergerPlugin({ sources: ['.myrc.json'] }),
-    myPlugin
-  ] as const
+import { createPlugin } from "@bunli/core/plugin"
+
+const myPlugin = createPlugin({
+  name: "my-plugin",
+  store: { count: 0 },
+  setup(context) {
+    context.registerCommand(myCommand)
+  },
+  beforeCommand(ctx) {
+    ctx.store.count++
+  }
 })
 ```
 
-See `packages/plugin-ai-detect/` and `packages/plugin-config/` for reference implementations.
-
-### Error Handling
-
-- Use `colors.error()`, `colors.warn()`, `colors.info()` from handler context
-- Throw meaningful errors with helpful messages
-- Zod schemas provide automatic validation for command options
-- Validation utilities are in `@bunli/utils`
-
----
-
-## Testing
-
-### Test File Structure
-
+### Using Prompts
 ```typescript
-import { describe, it, expect } from 'bun:test'
-import { testCommand } from '@bunli/test'
-import { myCommand } from '../src/commands/my-command.js'
-
-describe('My Command', () => {
-  it('should execute successfully', async () => {
-    const result = await testCommand(myCommand, {
-      flags: { input: 'test' }   // Named options go in 'flags'
-    })
-    expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('success')
+handler: async ({ prompt }) => {
+  const name = await prompt("What is your name?")
+  const proceed = await prompt.confirm("Continue?")
+  const framework = await prompt.select("Choose framework", {
+    options: [
+      { label: "React", value: "react" },
+      { label: "Vue", value: "vue" },
+      { label: "Svelte", value: "svelte" }
+    ]
   })
-
-  it('should handle positional arguments', async () => {
-    const result = await testCommand(myCommand, {
-      flags: { verbose: true },
-      args: ['file1.txt', 'file2.txt']  // Positional args go in 'args'
-    })
-    expect(result.stdout).toContain('file1.txt')
-  })
-
-  it('should handle plugin context', async () => {
-    const result = await testCommand(myCommand, {
-      flags: { verbose: true },
-      context: { store: { someData: 'test data' } }
-    })
-    expect(result.stdout).toContain('test data')
-  })
-})
+}
 ```
 
-Key distinction: `flags` for named options, `args` for positional arguments, `context` for plugin store.
+## Key Packages
 
-### Plugin Testing
+| Package | Purpose |
+|---------|---------|
+| `@bunli/core` | CLI framework (defineCommand, option, createCLI) |
+| `@bunli/utils` | Colors and validation utilities |
+| `@bunli/runtime/prompt` | Prompt and spinner APIs |
+| `@bunli/tui` | Terminal UI components |
+| `bunli` | CLI for building CLIs |
+| `create-bunli` | Project scaffolding |
+| `@bunli/generator` | Type generation from commands |
+
+## Built-in Plugins
+
+- `@bunli/plugin-ai-detect` - Detects AI coding assistants
+- `@bunli/plugin-completions` - Shell completions (bash, zsh, fish)
+- `@bunli/plugin-config` - Config loading from multiple sources
+- `@bunli/plugin-mcp` - MCP tools to CLI commands
+
+## Relationship with OpenTUI
+
+Bunli uses **OpenTUI** as its terminal rendering engine. Understanding when to use each:
+
+### Use Bunli (this skill) for:
+- Building CLI applications with commands and options
+- Plugin architecture (auth, config, completions)
+- Type-safe CLI with Zod validation
+- Interactive prompts via `@bunli/runtime/prompt`
+- Bunli TUI components (`Form`, `SchemaForm`, `DataTable`, `ProgressBar`, and more)
+- Publishing CLI to npm
+
+### Use OpenTUI skill when:
+- Building standalone terminal applications (not a CLI with subcommands)
+- Need advanced animation with timeline, keyframes, easing functions
+- Want full Flexbox/Yoga layout control
+- Creating custom renderable components
+- Need low-level buffer/terminal control
+- Building terminal games or complex interactive UIs
+
+### How They Connect
 
 ```typescript
-import { describe, it, expect } from 'bun:test'
-import { createCLI } from '@bunli/core'
-import { myPlugin } from '../src'
+// Bunli TUI uses OpenTUI under the hood
+import { Form, SchemaForm } from "@bunli/tui"      // Bunli's React components
+// prompt is provided via handler args by Bunli         // Prompt + spinner runtime
+import { useTimeline } from "@bunli/tui"          // Re-exported from opentui
 
-describe('My Plugin', () => {
-  it('should update store in beforeCommand', async () => {
-    const cli = await createCLI({
-      name: 'test-cli',
-      plugins: [myPlugin({ verbose: true })]
-    })
-    // Test plugin behavior
-  })
-})
+// Drop down to OpenTUI for advanced control
+import { h, Box, Text, instantiate } from "@opentui/core"
+import { createCliRenderer } from "@opentui/core"
 ```
 
-Test plugin lifecycle hooks, store functionality, and type inference with multiple plugins.
+**Package relationship:**
+- `@bunli/tui` wraps `@opentui/react`
+- Bunli auto-wires the OpenTUI renderer runtime for `render` commands
+- `@bunli/runtime/prompt` provides prompt + spinner APIs used in handlers
+- Bunli TUI hooks (`useKeyboard`, `useTimeline`) are re-exported from OpenTUI
+- Renderer options map to OpenTUI renderer settings
 
-### Debugging
-
-- Bun's built-in debugger: `bun --inspect`
-- Color utilities for logging are in: `@bunli/utils`
-- Test CLI commands in isolation with `@bunli/test`
-- Hot-reload development: `bunli dev`
-
-### Common Tasks
-
-| Task | Location |
-|------|----------|
-| Add new command | `packages/cli/src/commands/` |
-| Add new plugin | `packages/plugin-*/` |
+**When to combine:**
+1. Start with Bunli for CLI structure
+2. Use `@bunli/tui` for common patterns (forms, wizards)
+3. Drop to OpenTUI when you need custom components, advanced animation, or full control

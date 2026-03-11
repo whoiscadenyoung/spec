@@ -9,6 +9,9 @@ import {
   getNextId,
   readAllRecords,
   generateDecisionLog,
+  validateRecord,
+  validateAllRecords,
+  VALID_STATUSES,
 } from '../../src/lib/decisions.js'
 
 // ---------------------------------------------------------------------------

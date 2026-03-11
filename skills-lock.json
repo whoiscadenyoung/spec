@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "bunli": {
+      "source": "AryaLabsHQ/bunli",
+      "sourceType": "github",
+      "computedHash": "d92f7f225f7dac2fcc076bdc9cffcfa45156dfcbdb70ba298742cc15b4cf987f"
+    }
+  }
+}
