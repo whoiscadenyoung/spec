@@ -140,6 +140,266 @@ describe('decisions list --json', () => {
 })
 
 // ---------------------------------------------------------------------------
+// --scope flag
+// ---------------------------------------------------------------------------
+
+describe('decisions list --scope', () => {
+  it('only outputs records matching the given scope', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', scope: 'Architecture' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'Infrastructure']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+    expect(result.stdout).not.toContain('Use Event Sourcing')
+  })
+
+  it('matching is case-insensitive', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Convex' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'convex']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+  })
+
+  it('outputs a no-records message when no scope matches', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'Unknown']
+    )
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Use Postgres')
+  })
+
+  it('--scope with --json includes a filters field', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'Infrastructure', '--json']
+    )
+    const payload = JSON.parse(result.stdout)
+    expect(payload.data).toHaveProperty('filters')
+    expect(payload.data.filters.scope).toBe('Infrastructure')
+  })
+
+  it('--scope with --json only returns matching records', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', scope: 'Architecture' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'Infrastructure', '--json']
+    )
+    const records = JSON.parse(result.stdout).data.records
+    expect(records.every((r: { scope: string }) => r.scope.toLowerCase() === 'infrastructure')).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// --status flag
+// ---------------------------------------------------------------------------
+
+describe('decisions list --status', () => {
+  it('only outputs records matching the given status', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Accepted' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', status: 'Proposed' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--status', 'Accepted']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+    expect(result.stdout).not.toContain('Use Event Sourcing')
+  })
+
+  it('matching is case-insensitive', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Accepted' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--status', 'accepted']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+  })
+
+  it('outputs a no-records message when no status matches', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Proposed' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--status', 'Deprecated']
+    )
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Use Postgres')
+  })
+
+  it('--status with --json includes a filters field', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Accepted' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--status', 'Accepted', '--json']
+    )
+    const payload = JSON.parse(result.stdout)
+    expect(payload.data).toHaveProperty('filters')
+    expect(payload.data.filters.status).toBe('Accepted')
+  })
+
+  it('--status with --json only returns matching records', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Accepted' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', status: 'Proposed' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--status', 'Accepted', '--json']
+    )
+    const records = JSON.parse(result.stdout).data.records
+    expect(records.every((r: { status: string }) => r.status.toLowerCase() === 'accepted')).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// --scope and --status combined
+// ---------------------------------------------------------------------------
+
+describe('decisions list --scope --status', () => {
+  it('applies both filters together', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure', status: 'Accepted' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Redis', scope: 'Infrastructure', status: 'Proposed' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', scope: 'Architecture', status: 'Accepted' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--scope', 'Infrastructure', '--status', 'Accepted']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+    expect(result.stdout).not.toContain('Use Redis')
+    expect(result.stdout).not.toContain('Use Event Sourcing')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// --full flag
+// ---------------------------------------------------------------------------
+
+describe('decisions list --full', () => {
+  it('exits with code 0', async () => {
+    await testCommand(createDecisionCommand, { flags: { path: dir, title: 'Use Postgres' } })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full']
+    )
+    expect(result.exitCode).toBe(0)
+  })
+
+  it('includes the record file path in output', async () => {
+    await testCommand(createDecisionCommand, { flags: { path: dir, title: 'Use Postgres' } })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full']
+    )
+    expect(result.stdout).toContain('001-use-postgres.md')
+  })
+
+  it('includes the date in output', async () => {
+    await testCommand(createDecisionCommand, { flags: { path: dir, title: 'Use Postgres' } })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full']
+    )
+    // Date field should appear (format: YYYY-MM-DD)
+    expect(result.stdout).toMatch(/\d{4}-\d{2}-\d{2}/)
+  })
+
+  it('--full with --json records include id, date, and path fields', async () => {
+    await testCommand(createDecisionCommand, { flags: { path: dir, title: 'Use Postgres' } })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full', '--json']
+    )
+    const record = JSON.parse(result.stdout).data.records[0]
+    expect(record).toHaveProperty('id')
+    expect(record).toHaveProperty('date')
+    expect(record).toHaveProperty('path')
+  })
+
+  it('--full with --json records include all standard fields', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure', description: 'Primary DB' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full', '--json']
+    )
+    const record = JSON.parse(result.stdout).data.records[0]
+    expect(record).toHaveProperty('title')
+    expect(record).toHaveProperty('scope')
+    expect(record).toHaveProperty('status')
+    expect(record).toHaveProperty('description')
+  })
+
+  it('--full works with --scope filter', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', scope: 'Infrastructure' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', scope: 'Architecture' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full', '--scope', 'Infrastructure']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+    expect(result.stdout).not.toContain('Use Event Sourcing')
+  })
+
+  it('--full works with --status filter', async () => {
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Postgres', status: 'Accepted' },
+    })
+    await testCommand(createDecisionCommand, {
+      flags: { path: dir, title: 'Use Event Sourcing', status: 'Proposed' },
+    })
+    const result = await testCLI(
+      (cli) => cli.command(decisionsGroup),
+      ['decisions', 'list', '--path', dir, '--full', '--status', 'Accepted']
+    )
+    expect(result.stdout).toContain('Use Postgres')
+    expect(result.stdout).not.toContain('Use Event Sourcing')
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Error states
 // ---------------------------------------------------------------------------
 

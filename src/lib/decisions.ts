@@ -7,6 +7,7 @@ export interface DecisionRecord {
   filename: string
   title: string
   slug: string
+  date: string
   scope: string
   status: string
   description: string
@@ -59,6 +60,7 @@ export async function readAllRecords(recordsDir: string): Promise<DecisionRecord
       filename,
       title: fm.title ?? '',
       slug: fm.slug ?? '',
+      date: fm.date ?? '',
       scope: fm.scope ?? '',
       status: fm.status ?? '',
       description: fm.description ?? '',

@@ -83,10 +83,13 @@ const createDecisionCommand = defineCommand({
       const status = flags.status ?? 'Proposed'
       const description = flags.description ?? ''
 
+      const date = new Date().toISOString().slice(0, 10)
+
       const content = template
         .replace(/\{ID\}/g, String(nextId))
         .replace(/\{TITLE\}/g, flags.title)
         .replace(/\{SLUG\}/g, slug)
+        .replace(/\{DATE\}/g, date)
         .replace(/\{SCOPE\}/g, scope)
         .replace(/\{STATUS\}/g, status)
         .replace(/\{DESCRIPTION\}/g, description)
