@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "zod-type-inference",
+  "prompt": "Ok great, that fixed the TypeScript error. Can you record that decision so we have a reference if we hit this again? The issue was that we had to use `satisfies` instead of a type assertion because of how the generic inference works with the Zod schema.",
+  "assertions": [
+    "The CLI `decisions create` command was invoked to create the record (not just a manual file write)",
+    "A decision record file was created in the decisions records directory",
+    "The record's Context section describes the Zod generic inference problem and why type assertions failed",
+    "The record's Decision section explains the `satisfies` keyword approach and includes a relevant code snippet",
+    "The record's Consequences section has concrete bullet points about the trade-offs",
+    "No HTML comment placeholder blocks remain in the final file",
+    "The user is told the path to the new record file"
+  ]
+}

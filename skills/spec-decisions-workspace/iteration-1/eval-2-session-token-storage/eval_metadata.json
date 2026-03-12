@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "session-token-storage",
+  "prompt": "Before we move on, log this decision: we chose to store session tokens in cookies with httpOnly flag rather than localStorage because of the XSS risk we discussed. Scope it to Authentication.",
+  "assertions": [
+    "The CLI `decisions create` command was invoked to create the record",
+    "The scope of the record is exactly 'Authentication'",
+    "The record's Context section mentions XSS risk and localStorage as the rejected alternative",
+    "The record's Decision section describes the httpOnly cookie approach",
+    "No HTML comment placeholder blocks remain in the final file",
+    "The user is told the path to the new record file"
+  ]
+}

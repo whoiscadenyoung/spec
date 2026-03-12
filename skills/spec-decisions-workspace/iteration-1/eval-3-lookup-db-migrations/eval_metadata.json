@@ -1,0 +1,11 @@
+{
+  "eval_id": 3,
+  "eval_name": "lookup-db-migrations",
+  "prompt": "Do we have any previous decisions about how we handle database schema migrations? I want to make sure we're consistent before I add this new table.",
+  "assertions": [
+    "The CLI `decisions list` command was invoked (not just a file search)",
+    "The agent checks for decisions related to database or schema migrations specifically",
+    "The agent clearly communicates whether matching records were found or not",
+    "If no matching records are found, the agent informs the user and offers to create a new decision record"
+  ]
+}

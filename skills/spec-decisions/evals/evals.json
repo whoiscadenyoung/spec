@@ -5,19 +5,42 @@
       "id": 1,
       "prompt": "Ok great, that fixed the TypeScript error. Can you record that decision so we have a reference if we hit this again? The issue was that we had to use `satisfies` instead of a type assertion because of how the generic inference works with the Zod schema.",
       "expected_output": "A new decision record file created in docs/decisions/records/ with a meaningful title (e.g. 'Zod Schema Type Inference'), scope related to TypeScript or types, description summarizing the decision, and all three sections (Context, Decision, Consequences) filled in with no remaining HTML comment blocks. The user is informed of the file path.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "The CLI `decisions create` command was invoked to create the record (not just a manual file write)",
+        "A decision record file was created in the decisions records directory",
+        "The record's Context section describes the Zod generic inference problem and why type assertions failed",
+        "The record's Decision section explains the `satisfies` keyword approach and includes a relevant code snippet",
+        "The record's Consequences section has concrete bullet points about the trade-offs",
+        "No HTML comment placeholder blocks remain in the final file",
+        "The user is told the path to the new record file"
+      ]
     },
     {
       "id": 2,
       "prompt": "Before we move on, log this decision: we chose to store session tokens in cookies with httpOnly flag rather than localStorage because of the XSS risk we discussed. Scope it to Authentication.",
       "expected_output": "A decision record created with title around 'Session Token Storage', scope 'Authentication', description capturing the cookie vs localStorage choice, and all three template sections filled in detailing the XSS risk context, the httpOnly cookie decision, and the consequences. User is told the file path.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "The CLI `decisions create` command was invoked to create the record",
+        "The scope of the record is exactly 'Authentication'",
+        "The record's Context section mentions XSS risk and localStorage as the rejected alternative",
+        "The record's Decision section describes the httpOnly cookie approach",
+        "No HTML comment placeholder blocks remain in the final file",
+        "The user is told the path to the new record file"
+      ]
     },
     {
       "id": 3,
       "prompt": "Do we have any previous decisions about how we handle database schema migrations? I want to make sure we're consistent before I add this new table.",
       "expected_output": "The agent runs `{SCRIPT} decisions list --json` (optionally filtered by a 'Database' or 'Schema' scope), reviews the results, and either: (a) reads and summarizes any relevant record found, or (b) informs the user that no matching records were found and optionally offers to create one.",
-      "files": []
+      "files": [],
+      "expectations": [
+        "The CLI `decisions list` command was invoked (not just a file search)",
+        "The agent checks for decisions related to database or schema migrations specifically",
+        "The agent clearly communicates whether matching records were found or not",
+        "If no matching records are found, the agent informs the user and offers to create a new decision record"
+      ]
     }
   ]
 }
