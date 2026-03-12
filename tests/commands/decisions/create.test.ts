@@ -210,4 +210,44 @@ describe('decisions create — errors', () => {
     )
     expect(result.stderr).toContain('INVALID_TITLE')
   })
+
+  it('exits with a non-zero code when decisions have not been initialized', async () => {
+    const uninitDir = createTempDir()
+    try {
+      const result = await testCLI(
+        (cli) => cli.command(decisionsGroup),
+        ['decisions', 'create', '--path', uninitDir, '--title', 'Some Decision']
+      )
+      expect(result.exitCode).not.toBe(0)
+    } finally {
+      cleanupDir(uninitDir)
+    }
+  })
+
+  it('reports NOT_INITIALIZED when decisions have not been initialized', async () => {
+    const uninitDir = createTempDir()
+    try {
+      const result = await testCLI(
+        (cli) => cli.command(decisionsGroup),
+        ['decisions', 'create', '--path', uninitDir, '--title', 'Some Decision']
+      )
+      expect(result.stderr).toContain('NOT_INITIALIZED')
+    } finally {
+      cleanupDir(uninitDir)
+    }
+  })
+
+  it('outputs JSON error with NOT_INITIALIZED when not initialized and --json is passed', async () => {
+    const uninitDir = createTempDir()
+    try {
+      const result = await testCLI(
+        (cli) => cli.command(decisionsGroup),
+        ['decisions', 'create', '--path', uninitDir, '--title', 'Some Decision', '--json']
+      )
+      expect(() => JSON.parse(result.stdout)).not.toThrow()
+      expect(JSON.parse(result.stdout).error.code).toBe('NOT_INITIALIZED')
+    } finally {
+      cleanupDir(uninitDir)
+    }
+  })
 })

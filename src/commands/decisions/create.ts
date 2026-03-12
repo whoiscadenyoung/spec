@@ -1,6 +1,7 @@
 import { defineCommand, option } from '@bunli/core'
 import { z } from 'zod'
 import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { getRepoRoot } from '../../lib/git.js'
 import {
   slugify,
@@ -55,6 +56,10 @@ const createDecisionCommand = defineCommand({
       const decisionsDir = join(repoRoot, 'docs', 'decisions')
       const recordsDir = join(decisionsDir, 'records')
       const logPath = join(decisionsDir, 'decision-log.md')
+
+      if (!existsSync(recordsDir)) {
+        throw Errors.NOT_INITIALIZED
+      }
 
       const slug = slugify(flags.title)
       if (!slug) {
