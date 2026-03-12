@@ -4,25 +4,168 @@
 import type { Command, CLI, GeneratedOptionMeta, RegisteredCommands, CommandOptions, GeneratedCommandMeta } from '@bunli/core'
 import { createGeneratedHelpers, registerGeneratedStore } from '@bunli/core'
 
-import Hello from '../src/commands/hello.js'
+import CheckRequirements from '../src/commands/check-requirements.js'
+import Create from '../src/commands/create.js'
+import Decisions from '../src/commands/decisions.js'
+import Init from '../src/commands/init.js'
+import Update from '../src/commands/update.js'
 
 // Narrow list of command names to avoid typeof-cycles in types
-const names = ['hello'] as const
+const names = ['check-requirements', 'create', 'decisions', 'init', 'update'] as const
 type GeneratedNames = typeof names[number]
 
 const modules: Record<GeneratedNames, Command<any>> = {
-  'hello': Hello
+  'check-requirements': CheckRequirements,
+  'create': Create,
+  'decisions': Decisions,
+  'init': Init,
+  'update': Update
 } as const
 
 const metadata: Record<GeneratedNames, GeneratedCommandMeta> = {
-  'hello': {
-      name: 'hello',
-      description: 'Say hello to someone',
+  'check-requirements': {
+      name: 'check-requirements',
+      description: 'Validate feature documentation prerequisites',
       options: {
-        'name': { type: 'z.string.default', required: true, hasDefault: true, default: "World", description: 'Name to greet', short: 'n', schema: {"type":"zod","method":"default","args":[{"type":"literal","value":"World"}]}, validator: '(val) => true' },
-        'excited': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Add excitement!', short: 'e', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":364,"end":369,"loc":{"start":{"line":16,"column":26,"index":364},"end":{"line":16,"column":31,"index":369}},"value":false}}]}, validator: '(val) => true' }
+        'requireTasks': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Require tasks.md to exist', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":469,"end":474,"loc":{"start":{"line":12,"column":45,"index":469},"end":{"line":12,"column":50,"index":474}},"value":false}}]}, validator: '(val) => true' },
+        'pathsOnly': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Print path variables without validation', fileType: 'path', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":566,"end":571,"loc":{"start":{"line":13,"column":42,"index":566},"end":{"line":13,"column":47,"index":571}},"value":false}}]}, validator: '(val) => true' }
       },
-      path: './src/commands/hello'
+      path: './src/commands/check-requirements'
+    },
+  'create': {
+      name: 'create',
+      description: 'Create GitHub issues, feature branches, specs, and plans',
+      commands: [
+        {
+          name: 'issue',
+          description: '',
+          options: {
+            'type': { type: 'z.enum', required: true, hasDefault: false, short: 't', enumValues: ["fix","feature"], schema: {"type":"zod","method":"enum","args":[{"type":"unknown","raw":{"type":"ArrayExpression","start":1059,"end":1077,"loc":{"start":{"line":38,"column":24,"index":1059},"end":{"line":38,"column":42,"index":1077}},"elements":[{"type":"StringLiteral","start":1060,"end":1065,"loc":{"start":{"line":38,"column":25,"index":1060},"end":{"line":38,"column":30,"index":1065}},"extra":{"rawValue":"fix","raw":"'fix'"},"value":"fix"},{"type":"StringLiteral","start":1067,"end":1076,"loc":{"start":{"line":38,"column":32,"index":1067},"end":{"line":38,"column":41,"index":1076}},"extra":{"rawValue":"feature","raw":"'feature'"},"value":"feature"}]}}]}, validator: '(val) => true' },
+            'title': { type: 'z.string.min', required: true, hasDefault: false, min: 1, minLength: 1, schema: {"type":"zod","method":"min","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":1322,"end":1323,"loc":{"start":{"line":44,"column":33,"index":1322},"end":{"line":44,"column":34,"index":1323}},"extra":{"rawValue":1,"raw":"1"},"value":1}}]}, validator: '(val) => true' },
+            'body': { type: 'z.string.min', required: true, hasDefault: false, description: 'Full feature or bug description. Becomes the GitHub issue body.', short: 'b', min: 1, minLength: 1, schema: {"type":"zod","method":"min","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":1484,"end":1485,"loc":{"start":{"line":47,"column":32,"index":1484},"end":{"line":47,"column":33,"index":1485}},"extra":{"rawValue":1,"raw":"1"},"value":1}}]}, validator: '(val) => true' }
+          },
+          path: './src/commands/create/issue'
+        },
+        {
+          name: 'spec',
+          description: '',
+          options: {
+            'type': { type: 'z.enum', required: true, hasDefault: false, short: 't', enumValues: ["fix","feature"], schema: {"type":"zod","method":"enum","args":[{"type":"unknown","raw":{"type":"ArrayExpression","start":1058,"end":1076,"loc":{"start":{"line":35,"column":24,"index":1058},"end":{"line":35,"column":42,"index":1076}},"elements":[{"type":"StringLiteral","start":1059,"end":1064,"loc":{"start":{"line":35,"column":25,"index":1059},"end":{"line":35,"column":30,"index":1064}},"extra":{"rawValue":"fix","raw":"'fix'"},"value":"fix"},{"type":"StringLiteral","start":1066,"end":1075,"loc":{"start":{"line":35,"column":32,"index":1066},"end":{"line":35,"column":41,"index":1075}},"extra":{"rawValue":"feature","raw":"'feature'"},"value":"feature"}]}}]}, validator: '(val) => true' },
+            'number': { type: 'z.coerce.number.int.positive', required: true, hasDefault: false, short: 'n', schema: {"type":"zod","method":"positive","args":[]}, validator: '(val) => true' },
+            'slug': { type: 'z.string.min', required: true, hasDefault: false, short: 's', min: 1, minLength: 1, schema: {"type":"zod","method":"min","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":1612,"end":1613,"loc":{"start":{"line":47,"column":32,"index":1612},"end":{"line":47,"column":33,"index":1613}},"extra":{"rawValue":1,"raw":"1"},"value":1}}]}, validator: '(val) => true' }
+          },
+          path: './src/commands/create/spec'
+        },
+        {
+          name: 'plan',
+          description: 'Create a plan.md for the current feature branch',
+          path: './src/commands/create/plan'
+        }
+      ],
+      path: './src/commands/create'
+    },
+  'decisions': {
+      name: 'decisions',
+      description: 'Manage Architecture Decision Records (ADRs) — initialize the decisions folder, create new records, and keep the decision log up to date',
+      commands: [
+        {
+          name: 'init',
+          description: '',
+          options: {
+            'force': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Overwrite the existing docs/decisions/ folder if it already exists', short: 'f', fileType: 'directory', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":775,"end":780,"loc":{"start":{"line":21,"column":38,"index":775},"end":{"line":21,"column":43,"index":780}},"value":false}}]}, validator: '(val) => true' },
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":937,"end":942,"loc":{"start":{"line":25,"column":37,"index":937},"end":{"line":25,"column":42,"index":942}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root)', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/init'
+        },
+        {
+          name: 'status',
+          description: 'Check whether the decisions folder has been initialized.',
+          options: {
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON.', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":451,"end":456,"loc":{"start":{"line":12,"column":37,"index":451},"end":{"line":12,"column":42,"index":456}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root).', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/status'
+        },
+        {
+          name: 'create',
+          description: '',
+          options: {
+            'title': { type: 'z.string.min', required: true, hasDefault: false, description: 'Title of the decision record in natural language (e.g., "Use Decision Records"). Required.', short: 't', min: 1, minLength: 1, schema: {"type":"zod","method":"min","args":[{"type":"unknown","raw":{"type":"NumericLiteral","start":739,"end":740,"loc":{"start":{"line":26,"column":33,"index":739},"end":{"line":26,"column":34,"index":740}},"extra":{"rawValue":1,"raw":"1"},"value":1}}]}, validator: '(val) => true' },
+            'scope': { type: 'z.string.default', required: true, hasDefault: true, default: "", short: 's', schema: {"type":"zod","method":"default","args":[{"type":"literal","value":""}]}, validator: '(val) => true' },
+            'description': { type: 'z.string.default', required: true, hasDefault: true, default: "", description: 'Short description summarising what was decided. Defaults to empty.', short: 'd', schema: {"type":"zod","method":"default","args":[{"type":"literal","value":""}]}, validator: '(val) => true' },
+            'status': { type: 'z.enum.default', required: true, hasDefault: true, default: "Proposed", description: 'Status of the decision record: "Proposed" or "Accepted". Defaults to Proposed.', short: 'S', schema: {"type":"zod","method":"default","args":[{"type":"literal","value":"Proposed"}]}, validator: '(val) => true' },
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":1511,"end":1516,"loc":{"start":{"line":45,"column":37,"index":1511},"end":{"line":45,"column":42,"index":1516}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root)', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/create'
+        },
+        {
+          name: 'sync',
+          description: '',
+          options: {
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":709,"end":714,"loc":{"start":{"line":19,"column":37,"index":709},"end":{"line":19,"column":42,"index":714}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root)', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/sync'
+        },
+        {
+          name: 'validate',
+          description: '',
+          options: {
+            'fix': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Attempt to auto-fix fixable errors (ID/slug mismatches, quoted ID types).', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":740,"end":745,"loc":{"start":{"line":20,"column":36,"index":740},"end":{"line":20,"column":41,"index":745}},"value":false}}]}, validator: '(val) => true' },
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON.', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":891,"end":896,"loc":{"start":{"line":23,"column":37,"index":891},"end":{"line":23,"column":42,"index":896}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root).', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/validate'
+        },
+        {
+          name: 'list',
+          description: '',
+          options: {
+            'scope': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Filter records by scope (case-insensitive).', short: 's', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' },
+            'status': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Filter records by status (case-insensitive).', short: 'S', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' },
+            'full': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Show all frontmatter fields including ID, Date, and Path.', short: 'f', fileType: 'path', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":932,"end":937,"loc":{"start":{"line":23,"column":37,"index":932},"end":{"line":23,"column":42,"index":937}},"value":false}}]}, validator: '(val) => true' },
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON.', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":1085,"end":1090,"loc":{"start":{"line":27,"column":37,"index":1085},"end":{"line":27,"column":42,"index":1090}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root).', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/list'
+        },
+        {
+          name: 'list-scopes',
+          description: 'List all unique scopes used across decision records, with a count of records per scope.',
+          options: {
+            'json': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Output results as JSON.', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":551,"end":556,"loc":{"start":{"line":14,"column":37,"index":551},"end":{"line":14,"column":42,"index":556}},"value":false}}]}, validator: '(val) => true' },
+            'path': { type: 'z.string.optional', required: false, hasDefault: false, description: 'Override the repository root path (defaults to the git repo root).', short: 'p', fileType: 'path', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/decisions/list-scopes'
+        }
+      ],
+      path: './src/commands/decisions'
+    },
+  'init': {
+      name: 'init',
+      description: 'Set up Spec Kit in the current repository',
+      options: {
+        'ai': { type: 'z.enum', required: true, hasDefault: false, description: 'AI agent to configure', short: 'a', enumValues: ["copilot"], schema: {"type":"zod","method":"enum","args":[{"type":"unknown","raw":{"type":"ArrayExpression","start":1055,"end":1066,"loc":{"start":{"line":35,"column":13,"index":1055},"end":{"line":35,"column":24,"index":1066}},"elements":[{"type":"StringLiteral","start":1056,"end":1065,"loc":{"start":{"line":35,"column":14,"index":1056},"end":{"line":35,"column":23,"index":1065}},"extra":{"rawValue":"copilot","raw":"'copilot'"},"value":"copilot"}]}}]}, validator: '(val) => true' },
+        'force': { type: 'z.boolean.default', required: true, hasDefault: true, default: false, description: 'Overwrite existing prompt files', short: 'f', schema: {"type":"zod","method":"default","args":[{"type":"unknown","raw":{"type":"BooleanLiteral","start":1180,"end":1185,"loc":{"start":{"line":39,"column":26,"index":1180},"end":{"line":39,"column":31,"index":1185}},"value":false}}]}, validator: '(val) => true' }
+      },
+      path: './src/commands/init'
+    },
+  'update': {
+      name: 'update',
+      description: 'Update AI agent context and other feature artifacts',
+      commands: [
+        {
+          name: 'agent-context',
+          description: 'Update AI agent context files with current feature info',
+          options: {
+            'agent': { type: 'z.string.optional', required: false, hasDefault: false, short: 'a', schema: {"type":"zod","method":"optional","args":[]}, validator: '(val) => true' }
+          },
+          path: './src/commands/update/agent-context'
+        }
+      ],
+      path: './src/commands/update'
     }
 } as const
 

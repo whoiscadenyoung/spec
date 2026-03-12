@@ -14,7 +14,7 @@ export default defineConfig({
     outdir: './dist',
     targets: ['native'],
     minify: true,
-    sourcemap: true,
+    sourcemap: false,
     compress: false
   },
   
